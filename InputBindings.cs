@@ -11,5 +11,13 @@ public static class InputBindings
         public const string Accelerate = "Accelerate";
 
         public const string Decelerate = "Decelerate";
+
+        public const string LookLeft = "LookLeft";
+
+        public const string LookRight = "LookRight";
+        
+        public const string LookDown = "LookDown";
+
+        public const string LookUp = "LookUp";
     }
 }
