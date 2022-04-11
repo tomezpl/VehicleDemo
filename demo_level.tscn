@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://models/car chassis.glb" type="PackedScene" id=1]
 [ext_resource path="res://mat/testfloor.tres" type="Material" id=2]
@@ -6,6 +6,12 @@
 
 [sub_resource type="BoxShape" id=4]
 extents = Vector3( 0.534526, 0.360664, 1.24916 )
+
+[sub_resource type="SpatialMaterial" id=7]
+flags_unshaded = true
+flags_no_depth_test = true
+flags_do_not_receive_shadows = true
+vertex_color_use_as_albedo = true
 
 [sub_resource type="BoxShape" id=1]
 extents = Vector3( 8.5, 0.003, 8.5 )
@@ -18,8 +24,13 @@ extents = Vector3( 8.5, 0.003, 8.5 )
 
 [node name="RigidBody" type="RigidBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.675891, 0 )
+mass = 18.48
 script = ExtResource( 3 )
 ChaseCamNode = NodePath("Camera")
+RearAxleNode = NodePath("RearAxle")
+FrontAxleNode = NodePath("FrontAxle")
+CarChassisNode = NodePath("car chassis")
+WeightTransferDamping = 0.11
 
 [node name="Camera" type="Camera" parent="RigidBody"]
 transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.993638, 3.56813 )
@@ -29,7 +40,16 @@ fov = 80.0
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00370562, 0.186034, -0.00714102 )
 shape = SubResource( 4 )
 
+[node name="RearAxle" type="CSGCylinder" parent="RigidBody"]
+transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.107311, 0.822934 )
+
+[node name="FrontAxle" type="CSGCylinder" parent="RigidBody"]
+transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.107311, -0.810525 )
+
 [node name="car chassis" parent="RigidBody" instance=ExtResource( 1 )]
+
+[node name="ImmediateGeometry" type="ImmediateGeometry" parent="RigidBody"]
+material_override = SubResource( 7 )
 
 [node name="StaticBody" type="StaticBody" parent="."]
 transform = Transform( 10, 0, 0, 0, 1, 0, 0, 0, 10, 0, 0, 0 )
