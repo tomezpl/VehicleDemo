@@ -175,41 +175,37 @@ public class Car : RigidBody
 
     protected void AnimateWeightTransfer(float acceleration, float delta)
     {
+        // Weight force acting on each axle
         float frontWeight = GetFrontWeight(acceleration);
         float rearWeight = GetRearWeight(acceleration);
-        float carWeight = GetCarWeight();
 
+        // Calculate inertia at each axle.
+        // I = mr^2
         float frontInertia = Mass * FrontAxle.LengthSquared();
         float rearInertia = Mass * RearAxle.LengthSquared();
 
+        float sinTheta = 1f - Mathf.Sin(CarChassis.Rotation.x);
+
+        // Calculate torque from force and radius.
         // ignore sin theta since we'll be always applying the force perpendicularly, thus 1.
-        Vector3 frontTorque = Vector3.Right * (frontWeight - GetFrontWeight(0f)) * FrontAxle.Length();
-        Vector3 frontCounterTorque = -Vector3.Right * (GetFrontWeight(0f)) * FrontAxle.Length();
-        Vector3 rearTorque = Vector3.Right * (rearWeight - GetRearWeight(0f)) * RearAxle.Length();
-        Vector3 rearCounterTorque = -Vector3.Right * (GetRearWeight(0f)) * RearAxle.Length();
+        // TODO: actually, maybe do sin theta of car chassis x axis?
+        Vector3 frontTorque = Vector3.Right * FrontAxle.Length() * frontWeight * sinTheta;
+        Vector3 rearTorque = Vector3.Right * RearAxle.Length() * rearWeight * sinTheta;
 
-        Vector3 angularAccelRear = (rearTorque) / rearInertia;
-        Vector3 angularAccelFront = (frontTorque) / frontInertia;
+        // Calculate angular acceleration coming from each axle.
+        Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
 
-        ChassisAngularVelocity += angularAccelRear + angularAccelFront;
-        ChassisAngularVelocity -= ChassisAngularVelocity * Mathf.Pow(WeightTransferDamping / 2f, 2f);
+        const float maxRadians = Mathf.Pi / 8f;
 
-        const float maxRadians = Mathf.Pi / 16f;
-
+        ChassisAngularVelocity -= angularAcceleration;
         CarChassis.Rotation += ChassisAngularVelocity * delta;
-        if (Mathf.Abs(Acceleration.z) < 1f)
-        {
-            CarChassis.Rotation -= Vector3.Right * Mathf.Sign(CarChassis.Rotation.x) * WeightTransferDamping * delta;
-        }
-        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, CarChassis.Rotation.z);
 
-        float weightRatioRear = Mathf.InverseLerp(GetRearWeight(0), carWeight, rearWeight);
-        float weightRatioFront = Mathf.InverseLerp(GetFrontWeight(0), carWeight, frontWeight);
+        CarChassis.Rotation = WeightTransferDamping * new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, CarChassis.Rotation.z);
+
+        //GD.Print($"FrontTorque: {frontTorque}, RearTorque: {rearTorque}, AngularAcceleration: {angularAcceleration}");
 
         //GD.Print($"FrontWeight: {frontWeight}, RearWeight: {rearWeight}, CarWeight: {GetCarWeight()}");
-        GD.Print($"Acceleration: {Acceleration.z}, Chassis rotation: {CarChassis.RotationDegrees}");
-
-        //CarChassis.Rotation = (new Quat(Vector3.Right, maxRadians * Mathf.Max(0f, -weightRatioRear)) * new Quat(-Vector3.Right, maxRadians * Mathf.Max(0f, -weightRatioFront))).GetEuler();
+        //GD.Print($"Acceleration: {Acceleration.z}, Chassis rotation: {CarChassis.RotationDegrees}");
     }
 
     public void _on_RigidBody_body_entered(Node body)
