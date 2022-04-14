@@ -57,6 +57,11 @@ public class Car : RigidBody
     [Export]
     public float WeightTransferDamping = 0.6f;
 
+    [Export]
+    public NodePath DebugTextNode;
+
+    protected Label DebugText;
+
     // Declare member variables here. Examples:
     // private int a = 2;
     // private string b = "text";
@@ -84,6 +89,7 @@ public class Car : RigidBody
         WheelBase = (FrontAxle - RearAxle).Length();
 
         DebugGeometry = GetNodeOrNull<ImmediateGeometry>("ImmediateGeometry");
+        DebugText = GetNodeOrNull<Label>(DebugTextNode ?? "");
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -131,6 +137,19 @@ public class Car : RigidBody
         DebugGeometry.AddVertex(FrontAxle + Vector3.Up * GetFrontWeight(Acceleration.Length()) * 0.4f);
 
         DebugGeometry.End();
+
+        if(DebugText != null)
+        {
+            DebugText.Text = "";
+
+            DebugText.Text += $"Chassis Angular Velocity: {ChassisAngularVelocity.ToString("f")}";
+            DebugText.Text += $"\nChassis Rotation: {CarChassis.RotationDegrees.ToString("f")}";
+            DebugText.Text += $"\nAcceleration: {Acceleration.ToString("f")}";
+            DebugText.Text += $"\nVelocity: {LinearVelocity.ToString("f")}";
+            DebugText.Text += $"\nRearWeight: {(GetRearWeight(Acceleration.Length()) - GetRearWeight(0f)).ToString("f")}";
+            DebugText.Text += $"\nFrontWeight: {(GetFrontWeight(Acceleration.Length()) - GetFrontWeight(0f)).ToString("f")}";
+            DebugText.Text += $"\nAcceleration %: {Acceleration.z / GetPeakAcceleration().z:f}";
+        }
     }
 
     public override void _Input(InputEvent @event)
@@ -155,6 +174,11 @@ public class Car : RigidBody
         float yaw = ChaseCam.Rotation.y;
         float pitch = ChaseCam.Rotation.x;
         ChaseCam.Translation = new Vector3(Mathf.Sin(yaw) * Mathf.Cos(pitch), -Mathf.Sin(pitch), Mathf.Cos(yaw) * Mathf.Cos(pitch)) * CamDistance;
+    }
+
+    public Vector3 GetPeakAcceleration()
+    {
+        return GetLongitudinalForce(1f, true) / Mass;
     }
 
     public override void _PhysicsProcess(float delta)
@@ -186,6 +210,8 @@ public class Car : RigidBody
 
         float sinTheta = 1f - Mathf.Sin(CarChassis.Rotation.x);
 
+        Vector3 peakAcceleration = GetPeakAcceleration();
+
         // Calculate torque from force and radius.
         // ignore sin theta since we'll be always applying the force perpendicularly, thus 1.
         // TODO: actually, maybe do sin theta of car chassis x axis?
@@ -195,7 +221,7 @@ public class Car : RigidBody
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
 
-        const float maxRadians = Mathf.Pi / 8f;
+        float maxRadians = (Mathf.Pi / 8f) * Mathf.Abs((Acceleration.z / peakAcceleration.z));
 
         ChassisAngularVelocity -= angularAcceleration;
         CarChassis.Rotation += ChassisAngularVelocity * delta;
@@ -274,8 +300,8 @@ public class Car : RigidBody
     /// Longitudinal force exerted by the car wheels combined, including engine and resistance forces.
     /// </summary>
     /// <returns></returns>
-    protected Vector3 GetLongitudinalForce(float engineInput)
+    protected Vector3 GetLongitudinalForce(float engineInput, bool ignoreResistance = false)
     {
-        return GetTractionForce(engineInput) + GetDragForce() + GetRollingResistance();
+        return ignoreResistance ? GetTractionForce(engineInput) : GetTractionForce(engineInput) + GetDragForce() + GetRollingResistance();
     }
 }
