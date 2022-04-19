@@ -209,6 +209,7 @@ public class Car : RigidBody
         float rearInertia = Mass * RearAxle.LengthSquared();
 
         float sinTheta = 1f - Mathf.Sin(CarChassis.Rotation.x);
+        float cosTheta = Mathf.Cos(CarChassis.Rotation.x);
 
         Vector3 peakAcceleration = GetPeakAcceleration();
 
@@ -221,12 +222,14 @@ public class Car : RigidBody
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
 
-        float maxRadians = (Mathf.Pi / 8f) * Mathf.Abs((Acceleration.z / peakAcceleration.z));
+        float maxRadians = (Mathf.Pi / 16f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
 
-        ChassisAngularVelocity -= angularAcceleration;
+        ChassisAngularVelocity -= angularAcceleration * delta;
+        ChassisAngularVelocity -= ChassisAngularVelocity * delta * WeightTransferDamping;
+
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
-        CarChassis.Rotation = WeightTransferDamping * new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, CarChassis.Rotation.z);
+        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, CarChassis.Rotation.z);
 
         //GD.Print($"FrontTorque: {frontTorque}, RearTorque: {rearTorque}, AngularAcceleration: {angularAcceleration}");
 
