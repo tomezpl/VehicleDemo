@@ -1,0 +1,12 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://models/car wheel.glb" type="PackedScene" id=1]
+[ext_resource path="res://mat/TyreRubber.material" type="Material" id=2]
+[ext_resource path="res://mat/WheelMetal.material" type="Material" id=3]
+
+[node name="car wheel" instance=ExtResource( 1 )]
+transform = Transform( -0.15, -2.26494e-08, 0, 2.26494e-08, -0.15, 0, 0, 0, 0.15, 0, 0, 0 )
+
+[node name="Wheel" parent="." index="0"]
+material/0 = ExtResource( 2 )
+material/1 = ExtResource( 3 )

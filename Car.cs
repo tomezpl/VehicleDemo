@@ -222,7 +222,7 @@ public class Car : RigidBody
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
 
-        float maxRadians = (Mathf.Pi / 16f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
+        float maxRadians = (Mathf.Pi / 128f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
 
         ChassisAngularVelocity -= angularAcceleration * delta;
         ChassisAngularVelocity -= ChassisAngularVelocity * delta * WeightTransferDamping;
