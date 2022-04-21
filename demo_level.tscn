@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://models/car chassis.glb" type="PackedScene" id=1]
 [ext_resource path="res://mat/testfloor.tres" type="Material" id=2]
 [ext_resource path="res://Car.cs" type="Script" id=3]
 [ext_resource path="res://objects/CarWheel.tscn" type="PackedScene" id=4]
+[ext_resource path="res://CarWheel.cs" type="Script" id=5]
 
 [sub_resource type="PhysicsMaterial" id=8]
 friction = 0.0
@@ -35,11 +36,12 @@ ChaseCamNode = NodePath("Camera")
 RearAxleNode = NodePath("RearAxle")
 FrontAxleNode = NodePath("FrontAxle")
 CarChassisNode = NodePath("car chassis")
+GamepadFreeLookSensitivity = Vector2( 7.5, 7.5 )
 WeightTransferDamping = 0.764
 DebugTextNode = NodePath("../CanvasLayer/Label")
 
 [node name="Camera" type="Camera" parent="RigidBody"]
-transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.993638, 3.56813 )
+transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.993638, 2.65058 )
 fov = 80.0
 
 [node name="CollisionShape" type="CollisionShape" parent="RigidBody"]
@@ -51,18 +53,28 @@ transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0
 
 [node name="RightWheel" parent="RigidBody/RearAxle" instance=ExtResource( 4 )]
 transform = Transform( -6.37715e-09, -3.75, 0, 0.145892, -1.63918e-07, 0, 0, 0, 3.75, 0, 0.413246, 0 )
+script = ExtResource( 5 )
+ParentCarNode = NodePath("../..")
+FlippedYAxis = true
 
 [node name="LeftWheel" parent="RigidBody/RearAxle" instance=ExtResource( 4 )]
 transform = Transform( 6.38186e-09, -3.75, 3.27835e-07, -0.146, -1.63918e-07, -3.27835e-07, 1.27637e-08, -3.27835e-07, -3.75, 0, -0.413, 0 )
+script = ExtResource( 5 )
+ParentCarNode = NodePath("../..")
 
 [node name="FrontAxle" type="CSGCylinder" parent="RigidBody"]
 transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.137237, -0.800991 )
 
 [node name="RightWheel" parent="RigidBody/FrontAxle" instance=ExtResource( 4 )]
 transform = Transform( -6.37715e-09, -3.75, 0, 0.145892, -1.63918e-07, 0, 0, 0, 3.75, 0, 0.413246, 0 )
+script = ExtResource( 5 )
+ParentCarNode = NodePath("../..")
+FlippedYAxis = true
 
 [node name="LeftWheel" parent="RigidBody/FrontAxle" instance=ExtResource( 4 )]
 transform = Transform( 6.38186e-09, -3.75, 3.27835e-07, -0.146, -1.63918e-07, -3.27835e-07, 1.27637e-08, -3.27835e-07, -3.75, 0, -0.413, 0 )
+script = ExtResource( 5 )
+ParentCarNode = NodePath("../..")
 
 [node name="car chassis" parent="RigidBody" instance=ExtResource( 1 )]
 

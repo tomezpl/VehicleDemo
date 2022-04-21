@@ -24,6 +24,9 @@ public class Car : RigidBody
 
     private Vector3 ForwardVector { get => -Transform.basis.Column2; }
 
+    [Export]
+    public Vector2 GamepadFreeLookSensitivity = Vector2.One;
+
     public float EngineSpeed = 330f;
 
     // test value
@@ -99,10 +102,14 @@ public class Car : RigidBody
 
         LatestEngineInput = Input.GetAxis(InputBindings.Names.Decelerate, InputBindings.Names.Accelerate);
 
+        AnimateWeightTransfer(Acceleration.z, delta);
+
         if(ChaseCam != null)
         {
             //CameraFreeLook(Input.GetLastMouseSpeed());
         }
+
+        CameraFreeLook(new Vector2(Input.GetActionStrength(InputBindings.Names.LookRight) - Input.GetActionStrength(InputBindings.Names.LookLeft), Input.GetActionStrength(InputBindings.Names.LookUp) - Input.GetActionStrength(InputBindings.Names.LookDown)) * GamepadFreeLookSensitivity);
 
         DebugDraw();
     }
@@ -164,6 +171,13 @@ public class Car : RigidBody
                 LastMousePosition = mousePos;
             }
         }
+        else if(@event is InputEventJoypadMotion)
+        {
+            if(ChaseCam != null)
+            {
+
+            }
+        }
     }
 
     public void CameraFreeLook(Vector2 cameraInput)
@@ -194,7 +208,7 @@ public class Car : RigidBody
 
         Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
 
-        AnimateWeightTransfer(Acceleration.z, delta);
+        //AnimateWeightTransfer(Acceleration.z, delta);
     }
 
     protected void AnimateWeightTransfer(float acceleration, float delta)
