@@ -171,13 +171,6 @@ public class Car : RigidBody
                 LastMousePosition = mousePos;
             }
         }
-        else if(@event is InputEventJoypadMotion)
-        {
-            if(ChaseCam != null)
-            {
-
-            }
-        }
     }
 
     public void CameraFreeLook(Vector2 cameraInput)
