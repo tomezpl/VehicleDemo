@@ -215,7 +215,7 @@ public class Car : RigidBody
         float frontInertia = Mass * FrontAxle.LengthSquared();
         float rearInertia = Mass * RearAxle.LengthSquared();
 
-        float sinTheta = 1f - Mathf.Sin(CarChassis.Rotation.x);
+        float sinTheta = Mathf.Sin(CarChassis.Rotation.x);
         float cosTheta = Mathf.Cos(CarChassis.Rotation.x);
 
         Vector3 peakAcceleration = GetPeakAcceleration();
@@ -223,16 +223,15 @@ public class Car : RigidBody
         // Calculate torque from force and radius.
         // ignore sin theta since we'll be always applying the force perpendicularly, thus 1.
         // TODO: actually, maybe do sin theta of car chassis x axis?
-        Vector3 frontTorque = Vector3.Right * FrontAxle.Length() * frontWeight * sinTheta;
-        Vector3 rearTorque = Vector3.Right * RearAxle.Length() * rearWeight * sinTheta;
+        Vector3 frontTorque = Vector3.Right * FrontAxle.Length() * frontWeight * cosTheta;
+        Vector3 rearTorque = Vector3.Right * RearAxle.Length() * rearWeight * cosTheta;
 
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
 
-        float maxRadians = (Mathf.Pi / 128f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
+        float maxRadians = (Mathf.Pi / 70f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
 
-        ChassisAngularVelocity -= angularAcceleration * delta;
-        ChassisAngularVelocity -= ChassisAngularVelocity * delta * WeightTransferDamping;
+        ChassisAngularVelocity -= angularAcceleration * delta * (1f - WeightTransferDamping);
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
@@ -269,12 +268,14 @@ public class Car : RigidBody
 
     protected float GetFrontWeight(float acceleration)
     {
-        float rideHeight = Mathf.Abs((FrontAxle - CarChassis.Translation).y) * Mathf.Abs(CarChassis.Transform.basis.z.Dot(Vector3.Forward));
+        // Scale the ride height by angle from resting position.
+        float rideHeight = Mathf.Abs(((RearAxle + FrontAxle) / 2f).y - CarChassis.Translation.y);
         return GetAxleWeight(-acceleration, FrontAxle.Length(), rideHeight);
     }
     protected float GetRearWeight(float acceleration)
     {
-        float rideHeight = Mathf.Abs((RearAxle - CarChassis.Translation).y) * Mathf.Abs(CarChassis.Transform.basis.z.Dot(Vector3.Forward));
+        // Scale the ride height by angle from resting position.
+        float rideHeight = Mathf.Abs(((RearAxle + FrontAxle) / 2f).y - CarChassis.Translation.y);
         return GetAxleWeight(acceleration, RearAxle.Length(), rideHeight);
     }
 
