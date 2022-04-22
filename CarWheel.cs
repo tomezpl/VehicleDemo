@@ -11,6 +11,9 @@ public class CarWheel : Spatial
     [Export]
     public bool FlippedYAxis = false;
 
+    [Export]
+    public bool IsDriveWheel = false;
+
     public float WheelRadius = 1f;
 
     // Declare member variables here. Examples:
@@ -34,7 +37,14 @@ public class CarWheel : Spatial
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(float delta)
     {
-        float angularVelocity = (ParentCar.LinearVelocity.Length() / WheelRadius) * ParentCar.Transform.basis.z.Normalized().Dot(-ParentCar.LinearVelocity.Normalized());
+        float carLinearVelocity = ParentCar.LinearVelocity.Length();
+
+        if(IsDriveWheel)
+        {
+            carLinearVelocity += ParentCar.Acceleration.z * delta * 5f;
+        }
+        
+        float angularVelocity = (carLinearVelocity / WheelRadius) * ParentCar.Transform.basis.z.Normalized().Dot(-ParentCar.LinearVelocity.Normalized());
         GlobalRotate(GlobalTransform.basis.x.Normalized(), angularVelocity * delta * (FlippedYAxis ? -1f : 1f));
     }
 }

@@ -50,7 +50,7 @@ public class Car : RigidBody
 
     private Vector2 LastMousePosition = Vector2.Zero;
 
-    private Vector3 Acceleration = Vector3.Zero, VelocityLastFrame = Vector3.Zero;
+    public Vector3 Acceleration = Vector3.Zero, VelocityLastFrame = Vector3.Zero;
 
     [Export]
     public float PeakAcceleration = 20f;
