@@ -198,8 +198,6 @@ public class Car : RigidBody
         }
 
         Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
-
-        //AnimateWeightTransfer(Acceleration.z, delta);
     }
 
     protected void AnimateWeightTransfer(float acceleration, float delta)
@@ -213,7 +211,6 @@ public class Car : RigidBody
         float frontInertia = Mass * FrontAxle.LengthSquared();
         float rearInertia = Mass * RearAxle.LengthSquared();
 
-        float sinTheta = Mathf.Sin(CarChassis.Rotation.x);
         float cosTheta = Mathf.Cos(CarChassis.Rotation.x);
 
         Vector3 peakAcceleration = GetPeakAcceleration();
@@ -235,11 +232,6 @@ public class Car : RigidBody
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
         CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, CarChassis.Rotation.z);
-
-        //GD.Print($"FrontTorque: {frontTorque}, RearTorque: {rearTorque}, AngularAcceleration: {angularAcceleration}");
-
-        //GD.Print($"FrontWeight: {frontWeight}, RearWeight: {rearWeight}, CarWeight: {GetCarWeight()}");
-        //GD.Print($"Acceleration: {Acceleration.z}, Chassis rotation: {CarChassis.RotationDegrees}");
     }
 
     public void _on_RigidBody_body_entered(Node body)
