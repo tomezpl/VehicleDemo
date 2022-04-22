@@ -114,34 +114,32 @@ public class Car : RigidBody
         DebugDraw();
     }
 
+    protected void DrawLine(Vector3 start, Vector3 end, Color color)
+    {
+        DebugGeometry.SetColor(color);
+        DebugGeometry.AddVertex(start);
+        DebugGeometry.SetColor(color);
+        DebugGeometry.AddVertex(end);
+    }
+
     protected void DebugDraw()
     {
         DebugGeometry.Clear();
         DebugGeometry.Begin(Mesh.PrimitiveType.Lines);
 
         // Draw rear axle
-        DebugGeometry.SetColor(Colors.Red);
-        DebugGeometry.AddVertex(CarChassis.Translation);
-        DebugGeometry.SetColor(Colors.Red);
-        DebugGeometry.AddVertex(RearAxle);
+        DrawLine(CarChassis.Translation, RearAxle, Colors.Red);
 
         // Draw front axle
-        DebugGeometry.SetColor(Colors.DarkRed);
-        DebugGeometry.AddVertex(CarChassis.Translation);
-        DebugGeometry.SetColor(Colors.DarkRed);
-        DebugGeometry.AddVertex(FrontAxle);
+        DrawLine(CarChassis.Translation, FrontAxle, Colors.DarkRed);
 
         // Draw rear axle weight
-        DebugGeometry.SetColor(Colors.Cyan);
-        DebugGeometry.AddVertex(RearAxle);
-        DebugGeometry.SetColor(Colors.Cyan);
-        DebugGeometry.AddVertex(RearAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f);
+        DrawLine(RearAxle, RearAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.Cyan);
 
         // Draw front axle weight
-        DebugGeometry.SetColor(Colors.DarkCyan);
-        DebugGeometry.AddVertex(FrontAxle);
-        DebugGeometry.SetColor(Colors.DarkCyan);
-        DebugGeometry.AddVertex(FrontAxle + Vector3.Up * GetFrontWeight(Acceleration.Length()) * 0.4f);
+        DrawLine(FrontAxle, FrontAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.DarkCyan);
+
+        DrawLine(Vector3.Zero, ChassisAngularVelocity * 3f, Colors.Pink);
 
         DebugGeometry.End();
 
@@ -229,9 +227,10 @@ public class Car : RigidBody
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
 
-        float maxRadians = (Mathf.Pi / 70f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
+        float maxRadians = (Mathf.Pi / 64f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
 
-        ChassisAngularVelocity -= angularAcceleration * delta * (1f - WeightTransferDamping);
+        ChassisAngularVelocity -= angularAcceleration * delta;
+        ChassisAngularVelocity -= ChassisAngularVelocity * WeightTransferDamping * delta;
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
