@@ -52,14 +52,14 @@ shape = SubResource( 4 )
 transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.137012, 0.800166 )
 
 [node name="RightWheel" parent="RigidBody/RearAxle" instance=ExtResource( 4 )]
-transform = Transform( -6.37715e-09, -3.75, 0, 0.145892, -1.63918e-07, 0, 0, 0, 3.75, 0, 0.413246, 0 )
+transform = Transform( -6.37715e-09, -3.75, 0, 0.145892, -1.63918e-07, 0, 0, 0, 3.75, 1.35842, 0.413246, 0 )
 script = ExtResource( 5 )
 ParentCarNode = NodePath("../..")
 FlippedYAxis = true
 IsDriveWheel = true
 
 [node name="LeftWheel" parent="RigidBody/RearAxle" instance=ExtResource( 4 )]
-transform = Transform( 6.38186e-09, -3.75, 3.27835e-07, -0.146, -1.63918e-07, -3.27835e-07, 1.27637e-08, -3.27835e-07, -3.75, 0, -0.413, 0 )
+transform = Transform( 6.38186e-09, -3.75, 3.27835e-07, -0.146, -1.63918e-07, -3.27835e-07, 1.27637e-08, -3.27835e-07, -3.75, 1.35842, -0.413, 0 )
 script = ExtResource( 5 )
 ParentCarNode = NodePath("../..")
 IsDriveWheel = true
@@ -68,13 +68,13 @@ IsDriveWheel = true
 transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.137237, -0.800991 )
 
 [node name="RightWheel" parent="RigidBody/FrontAxle" instance=ExtResource( 4 )]
-transform = Transform( -6.37715e-09, -3.75, 0, 0.145892, -1.63918e-07, 0, 0, 0, 3.75, 0, 0.413246, 0 )
+transform = Transform( -6.37715e-09, -3.75, 0, 0.145892, -1.63918e-07, 0, 0, 0, 3.75, 1.35842, 0.413246, 0 )
 script = ExtResource( 5 )
 ParentCarNode = NodePath("../..")
 FlippedYAxis = true
 
 [node name="LeftWheel" parent="RigidBody/FrontAxle" instance=ExtResource( 4 )]
-transform = Transform( 6.38186e-09, -3.75, 3.27835e-07, -0.146, -1.63918e-07, -3.27835e-07, 1.27637e-08, -3.27835e-07, -3.75, 0, -0.413, 0 )
+transform = Transform( 6.38186e-09, -3.75, 3.27835e-07, -0.146, -1.63918e-07, -3.27835e-07, 1.27637e-08, -3.27835e-07, -3.75, 1.35842, -0.413, 0 )
 script = ExtResource( 5 )
 ParentCarNode = NodePath("../..")
 
