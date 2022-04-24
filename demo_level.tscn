@@ -37,7 +37,7 @@ RearAxleNode = NodePath("RearAxle")
 FrontAxleNode = NodePath("FrontAxle")
 CarChassisNode = NodePath("car chassis")
 GamepadFreeLookSensitivity = Vector2( 7.5, 7.5 )
-WeightTransferDamping = 0.712
+WeightTransferDamping = 0.879
 DebugTextNode = NodePath("../CanvasLayer/Label")
 
 [node name="Camera" type="Camera" parent="RigidBody"]

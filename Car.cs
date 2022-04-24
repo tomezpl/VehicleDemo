@@ -227,6 +227,8 @@ public class Car : RigidBody
         float maxRadians = (Mathf.Pi / 64f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
 
         ChassisAngularVelocity -= angularAcceleration * delta;
+        // TODO: Maybe check if the change since last frame was too drastic, to smooth out the velocity changes?
+        ChassisAngularVelocity = new Vector3(Mathf.Clamp(ChassisAngularVelocity.x, -maxRadians, maxRadians), ChassisAngularVelocity.y, ChassisAngularVelocity.z);
         ChassisAngularVelocity -= ChassisAngularVelocity * WeightTransferDamping * delta;
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
