@@ -14,9 +14,24 @@ public class CarWheel : Spatial
     [Export]
     public bool IsDriveWheel = false;
 
+    [Export]
+    public bool IsTurningWheel = false;
+
     public float WheelRadius = 1f;
 
     public float MaxSuspensionY = 0f;
+
+    private Vector3 BaseRotation = Vector3.Zero;
+
+    private float BaseOffset = 0f;
+
+    [Export]
+    public Vector3 RotationAxis = Vector3.Right;
+
+    [Export]
+    public NodePath ParentAxleNode;
+
+    public Spatial ParentAxle;
 
     // Declare member variables here. Examples:
     // private int a = 2;
@@ -35,9 +50,15 @@ public class CarWheel : Spatial
             WheelRadius = Mathf.Max(Mathf.Abs(wheelAabb.Size.y), Mathf.Abs(wheelAabb.Size.z));
         }
 
+        ParentAxle = GetNode<Spatial>(ParentAxleNode);
+
         // Store the predefined wheel local origin's Y coord as maximum spring length.
-        MaxSuspensionY = Translation.x;
-        Translation *= new Vector3(0f, 1f, 1f);
+        MaxSuspensionY = Translation.y - ParentAxle.Translation.y;
+        Translation -= Vector3.Up * MaxSuspensionY;
+
+        BaseRotation = Rotation;
+
+        BaseOffset = Translation.y;
     }
 
     /// <summary>
@@ -70,7 +91,12 @@ public class CarWheel : Spatial
         if(raycast != null && raycast.Contains("position"))
         {
             Vector3 raycastHit = (Vector3)raycast["position"];
-            SetSpringDistance((raycastHit - axle.origin).Length());
+            //SetSpringDistance((raycastHit - axle.origin).Length());
+        }
+
+        if (IsTurningWheel)
+        {
+            Rotation = BaseRotation + Vector3.Up * ParentCar.LatestCorneringInput * ParentCar.MaxWheelYaw * -1f;
         }
     }
 }

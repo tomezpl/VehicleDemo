@@ -20,6 +20,10 @@ public class Car : RigidBody
     protected Vector3 RearAxle, FrontAxle;
     protected Spatial CarChassis;
 
+    protected Vector3 FrontAxleBaseRotation = Vector3.Zero;
+
+    protected float FrontAxleSpan = 0f;
+
     private Camera ChaseCam;
 
     private Vector3 ForwardVector { get => -Transform.basis.Column2; }
@@ -36,6 +40,11 @@ public class Car : RigidBody
     public float RollingResistance = 1f;
 
     private float LatestEngineInput = 0f;
+
+    public float LatestCorneringInput = 0f;
+
+    [Export]
+    public float MaxWheelYaw = Mathf.Pi / 8f;
 
     private float CamDistance = 7f;
 
@@ -93,6 +102,8 @@ public class Car : RigidBody
 
         DebugGeometry = GetNodeOrNull<ImmediateGeometry>("ImmediateGeometry");
         DebugText = GetNodeOrNull<Label>(DebugTextNode ?? "");
+
+        FrontAxleBaseRotation = GetNode<Spatial>(FrontAxleNode).Rotation;
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -101,6 +112,7 @@ public class Car : RigidBody
         RunningTime += delta;
 
         LatestEngineInput = Input.GetAxis(InputBindings.Names.Decelerate, InputBindings.Names.Accelerate);
+        LatestCorneringInput = Input.GetAxis(InputBindings.Names.TurnLeft, InputBindings.Names.TurnRight);
 
         AnimateWeightTransfer(Acceleration.z, delta);
 
