@@ -31,6 +31,7 @@ extents = Vector3( 8.5, 0.003, 8.5 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.675891, 0 )
 mass = 18.48
 physics_material_override = SubResource( 8 )
+angular_damp = 7.339
 script = ExtResource( 3 )
 ChaseCamNode = NodePath("Camera")
 RearAxleNode = NodePath("RearAxle")
@@ -39,6 +40,9 @@ CarChassisNode = NodePath("car chassis")
 GamepadFreeLookSensitivity = Vector2( 7.5, 7.5 )
 WeightTransferDamping = 0.879
 DebugTextNode = NodePath("../CanvasLayer/Label")
+CorneringStiffness = 0.901
+WheelTurnRate = 2.0
+WheelRecoverRate = 3.0
 
 [node name="Camera" type="Camera" parent="RigidBody"]
 transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.993638, 2.65058 )

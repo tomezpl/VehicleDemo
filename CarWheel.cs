@@ -21,7 +21,7 @@ public class CarWheel : Spatial
 
     public float MaxSuspensionY = 0f;
 
-    private Vector3 BaseRotation = Vector3.Zero;
+    private Quat BaseTurnRotation = Quat.Identity, BaseRollRotation = Quat.Identity;
 
     private float BaseOffset = 0f;
 
@@ -56,7 +56,8 @@ public class CarWheel : Spatial
         MaxSuspensionY = Translation.y - ParentAxle.Translation.y;
         Translation -= Vector3.Up * MaxSuspensionY;
 
-        BaseRotation = Rotation;
+        BaseTurnRotation = new Quat(Rotation) * new Quat(Vector3.Up, FlippedYAxis ? 0f : -Mathf.Pi);
+        BaseRollRotation = new Quat(Rotation);
 
         BaseOffset = Translation.y;
     }
@@ -81,7 +82,17 @@ public class CarWheel : Spatial
         }
         
         float angularVelocity = (carLinearVelocity / WheelRadius) * ParentCar.Transform.basis.z.Normalized().Dot(-ParentCar.LinearVelocity.Normalized());
-        GlobalRotate(GlobalTransform.basis.x.Normalized(), angularVelocity * delta * (FlippedYAxis ? -1f : 1f));
+
+        BaseRollRotation *= new Quat(Vector3.Right, angularVelocity * delta * (FlippedYAxis ? -1f : 1f));
+
+        Quat newTurnRot = BaseTurnRotation;
+
+        if (IsTurningWheel)
+        {
+            newTurnRot *= new Quat(Vector3.Up * ParentCar.WheelTurn * ParentCar.MaxWheelYaw * -1f);
+        }
+
+        Rotation = (newTurnRot * BaseRollRotation).Normalized().GetEuler();
     }
 
     public override void _PhysicsProcess(float delta)
@@ -92,11 +103,6 @@ public class CarWheel : Spatial
         {
             Vector3 raycastHit = (Vector3)raycast["position"];
             //SetSpringDistance((raycastHit - axle.origin).Length());
-        }
-
-        if (IsTurningWheel)
-        {
-            Rotation = BaseRotation + Vector3.Up * ParentCar.LatestCorneringInput * ParentCar.MaxWheelYaw * -1f;
         }
     }
 }

@@ -28,6 +28,9 @@ public class Car : RigidBody
 
     private Vector3 ForwardVector { get => -Transform.basis.Column2; }
 
+    private Vector3 RightVector { get => Transform.basis.Column0; }
+    private Vector3 UpVector { get => Transform.basis.Column1; }
+
     [Export]
     public Vector2 GamepadFreeLookSensitivity = Vector2.One;
 
@@ -74,6 +77,17 @@ public class Car : RigidBody
 
     protected Label DebugText;
 
+    [Export]
+    public float CorneringStiffness = 0.4f;
+
+    public float WheelTurn = 0f;
+
+    [Export]
+    public float WheelTurnRate = 0.2f;
+
+    [Export]
+    public float WheelRecoverRate = 0.5f;
+
     // Declare member variables here. Examples:
     // private int a = 2;
     // private string b = "text";
@@ -113,6 +127,14 @@ public class Car : RigidBody
 
         LatestEngineInput = Input.GetAxis(InputBindings.Names.Decelerate, InputBindings.Names.Accelerate);
         LatestCorneringInput = Input.GetAxis(InputBindings.Names.TurnLeft, InputBindings.Names.TurnRight);
+        if (Mathf.Abs(LatestCorneringInput) < 0.0001f)
+        {
+            WheelTurn = Mathf.Clamp(WheelTurn - WheelTurn * WheelRecoverRate * delta, -1f, 1f);
+        }
+        else
+        {
+            WheelTurn = Mathf.Clamp(WheelTurn + WheelTurnRate * delta * Mathf.Sign(LatestCorneringInput), -Mathf.Abs(LatestCorneringInput), Mathf.Abs(LatestCorneringInput));
+        }
 
         AnimateWeightTransfer(Acceleration.z, delta);
 
@@ -140,18 +162,34 @@ public class Car : RigidBody
         DebugGeometry.Begin(Mesh.PrimitiveType.Lines);
 
         // Draw rear axle
-        DrawLine(CarChassis.Translation, RearAxle, Colors.Red);
+        //DrawLine(CarChassis.Translation, RearAxle, Colors.Red);
 
         // Draw front axle
-        DrawLine(CarChassis.Translation, FrontAxle, Colors.DarkRed);
+        //DrawLine(CarChassis.Translation, FrontAxle, Colors.DarkRed);
 
         // Draw rear axle weight
-        DrawLine(RearAxle, RearAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.Cyan);
+        //DrawLine(RearAxle, RearAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.Cyan);
 
         // Draw front axle weight
-        DrawLine(FrontAxle, FrontAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.DarkCyan);
+        //DrawLine(FrontAxle, FrontAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.DarkCyan);
+
+        (float lng, float lat) = GetVelocitySplit();
+        DrawLine(Vector3.Zero, Vector3.Forward * lng, Colors.Blue);
+        DrawLine(Vector3.Zero, Vector3.Right * lat, Colors.Red);
 
         DrawLine(Vector3.Zero, ChassisAngularVelocity * 3f, Colors.Pink);
+
+        (float front, float rear) alpha = GetSlipAngles();
+        Vector3 rearLat = GetLateralForce(alpha.rear);
+        Vector3 frontLat = GetLateralForce(alpha.front);
+
+        float deltaAngle = GetDeltaAngle();
+
+        DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + frontLat * FrontAxle.Length() * Mathf.Cos(deltaAngle), Colors.Purple);
+        DrawLine(Vector3.Zero, rearLat, Colors.Orange);
+
+        Vector3 wheelOrigin = Vector3.Forward * 0.3f + Vector3.Right * 0.1f;
+        DrawLine(wheelOrigin, wheelOrigin + Vector3.Right * Mathf.Sin(deltaAngle), Colors.Cyan);
 
         DebugGeometry.End();
 
@@ -166,6 +204,10 @@ public class Car : RigidBody
             DebugText.Text += $"\nRearWeight: {(GetRearWeight(Acceleration.Length()) - GetRearWeight(0f)).ToString("f")}";
             DebugText.Text += $"\nFrontWeight: {(GetFrontWeight(Acceleration.Length()) - GetFrontWeight(0f)).ToString("f")}";
             DebugText.Text += $"\nAcceleration %: {Acceleration.z / GetPeakAcceleration().z:f}";
+            DebugText.Text += $"\nfLateral, front: {frontLat.ToString("f")}";
+            DebugText.Text += $"\nfLateral, rear: {rearLat.ToString("f")}";
+            DebugText.Text += $"\nDelta Angle: {GetDeltaAngle():f}";
+            DebugText.Text += $"\nSlip Angle: {GetSlipAngles().front:f}";
         }
     }
 
@@ -198,6 +240,66 @@ public class Car : RigidBody
         return GetLongitudinalForce(1f, true) / Mass;
     }
 
+    /// <summary>
+    /// Splits the velocity vector into longitudinal and lateral.
+    /// </summary>
+    /// <returns></returns>
+    public (float lng, float lat) GetVelocitySplit()
+    {
+        float magnitude = LinearVelocity.Length();
+        if(magnitude < 0.0001f)
+        {
+            return (0f, 0f);
+        }
+
+        Vector3 normV = LinearVelocity.Normalized();
+        return (-Transform.basis.z.Dot(normV) * magnitude, -Transform.basis.x.Dot(normV) * magnitude);
+    }
+
+    public Vector3 GetTyreLoad()
+    {
+        return (Mass / 4f) * Vector3.Down * 9.81f;
+    }
+
+    public Vector3 GetLateralForce(float slipAngle)
+    {
+        return UpVector * CorneringStiffness * slipAngle;
+    }
+
+    public float GetTurnRadius(float deltaAngle)
+    {
+        return Mathf.Sin(deltaAngle);
+    }
+
+    public float GetTurnRate(float turnRadius)
+    {
+        return LinearVelocity.Length() / turnRadius;
+    }
+
+    /// <summary>
+    /// Calculates slip angle (alpha) for the front and rear wheels.
+    /// </summary>
+    /// <returns></returns>
+    public (float front, float rear) GetSlipAngles()
+    {
+        (float lng, float lat) = GetVelocitySplit();
+
+        float delta = GetDeltaAngle();
+
+        float yawRate = GetTurnRate(GetTurnRadius(delta));
+
+        float front = lng == 0f ? 0f : Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng)) - delta * Mathf.Sign(lng);
+
+        float rear = lng == 0f ? 0f : Mathf.Atan((lat - yawRate * RearAxle.Length()) / Mathf.Abs(lng));
+
+        return (front, rear);
+    }
+
+    public float GetDeltaAngle()
+    {
+        return WheelTurn * MaxWheelYaw;
+    }
+
     public override void _PhysicsProcess(float delta)
     {
         VelocityLastFrame = LinearVelocity;
@@ -210,6 +312,18 @@ public class Car : RigidBody
         }
 
         Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
+
+        (float front, float rear) alpha = GetSlipAngles();
+        Vector3 rearLat = GetLateralForce(alpha.rear);
+        Vector3 frontLat = GetLateralForce(alpha.front);
+
+        if (Mathf.Abs(GetVelocitySplit().lng) > 0.01f)
+        {
+            AddTorque((rearLat.Normalized() * GetTyreLoad()) * RearAxle.Length());
+            AddTorque((rearLat.Normalized() * GetTyreLoad()) * RearAxle.Length());
+            AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()));
+            AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()));
+        }
     }
 
     protected void AnimateWeightTransfer(float acceleration, float delta)
