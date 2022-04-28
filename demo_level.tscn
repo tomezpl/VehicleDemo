@@ -7,7 +7,7 @@
 [ext_resource path="res://CarWheel.cs" type="Script" id=5]
 
 [sub_resource type="PhysicsMaterial" id=8]
-friction = 0.0
+friction = 0.91
 
 [sub_resource type="BoxShape" id=4]
 extents = Vector3( 0.535, 0.435, 1.249 )
@@ -39,9 +39,10 @@ RearAxleNode = NodePath("RearAxle")
 FrontAxleNode = NodePath("FrontAxle")
 CarChassisNode = NodePath("car chassis")
 GamepadFreeLookSensitivity = Vector2( 7.5, 7.5 )
-WeightTransferDamping = 0.879
+MaxWheelYaw = 0.391
+WeightTransferDamping = 0.897
 DebugTextNode = NodePath("../CanvasLayer/Label")
-CorneringStiffness = 0.901
+CorneringStiffness = 55.0
 WheelTurnRate = 2.0
 WheelRecoverRate = 3.0
 

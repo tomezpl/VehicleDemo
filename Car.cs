@@ -185,11 +185,14 @@ public class Car : RigidBody
 
         float deltaAngle = GetDeltaAngle();
 
-        DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + frontLat * FrontAxle.Length() * Mathf.Cos(deltaAngle), Colors.Purple);
-        DrawLine(Vector3.Zero, rearLat, Colors.Orange);
+        DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + (frontLat * FrontAxle.Length() * Mathf.Cos(deltaAngle)), Colors.Purple);
+
+        float direction = -Mathf.Sign(GetVelocitySplit().lng);
+        Vector3 netCorneringForce = Vector3.Right * ((rearLat.y * 2f * direction) + (Mathf.Cos(GetDeltaAngle()) * frontLat.y * 2f * direction));
+        DrawLine(Vector3.Up * 0.2f, Vector3.Up * 0.2f + netCorneringForce, Colors.Cornflower);
 
         Vector3 wheelOrigin = Vector3.Forward * 0.3f + Vector3.Right * 0.1f;
-        DrawLine(wheelOrigin, wheelOrigin + Vector3.Right * Mathf.Sin(deltaAngle), Colors.Cyan);
+        //DrawLine(wheelOrigin, wheelOrigin + Vector3.Right * Mathf.Sin(deltaAngle), Colors.Cyan);
 
         DebugGeometry.End();
 
@@ -197,17 +200,18 @@ public class Car : RigidBody
         {
             DebugText.Text = "";
 
-            DebugText.Text += $"Chassis Angular Velocity: {ChassisAngularVelocity.ToString("f")}";
-            DebugText.Text += $"\nChassis Rotation: {CarChassis.RotationDegrees.ToString("f")}";
-            DebugText.Text += $"\nAcceleration: {Acceleration.ToString("f")}";
+            //DebugText.Text += $"Chassis Angular Velocity: {ChassisAngularVelocity.ToString("f")}";
+            //DebugText.Text += $"\nChassis Rotation: {CarChassis.RotationDegrees.ToString("f")}";
+            //DebugText.Text += $"\nAcceleration: {Acceleration.ToString("f")}";
             DebugText.Text += $"\nVelocity: {LinearVelocity.ToString("f")}";
-            DebugText.Text += $"\nRearWeight: {(GetRearWeight(Acceleration.Length()) - GetRearWeight(0f)).ToString("f")}";
-            DebugText.Text += $"\nFrontWeight: {(GetFrontWeight(Acceleration.Length()) - GetFrontWeight(0f)).ToString("f")}";
-            DebugText.Text += $"\nAcceleration %: {Acceleration.z / GetPeakAcceleration().z:f}";
+            //DebugText.Text += $"\nRearWeight: {(GetRearWeight(Acceleration.Length()) - GetRearWeight(0f)).ToString("f")}";
+            //DebugText.Text += $"\nFrontWeight: {(GetFrontWeight(Acceleration.Length()) - GetFrontWeight(0f)).ToString("f")}";
+            //DebugText.Text += $"\nAcceleration %: {Acceleration.z / GetPeakAcceleration().z:f}";
             DebugText.Text += $"\nfLateral, front: {frontLat.ToString("f")}";
             DebugText.Text += $"\nfLateral, rear: {rearLat.ToString("f")}";
             DebugText.Text += $"\nDelta Angle: {GetDeltaAngle():f}";
             DebugText.Text += $"\nSlip Angle: {GetSlipAngles().front:f}";
+            DebugText.Text += $"\nTyre load: {GetTyreLoad():f}";
         }
     }
 
@@ -258,7 +262,7 @@ public class Car : RigidBody
 
     public Vector3 GetTyreLoad()
     {
-        return (Mass / 4f) * Vector3.Down * 9.81f;
+        return Vector3.Down * Weight / 4f;
     }
 
     public Vector3 GetLateralForce(float slipAngle)
@@ -288,7 +292,7 @@ public class Car : RigidBody
 
         float yawRate = GetTurnRate(GetTurnRadius(delta));
 
-        float front = lng == 0f ? 0f : Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng)) - delta * Mathf.Sign(lng);
+        float front = (lng == 0f ? 0f : Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng))) - delta * Mathf.Sign(lng);
 
         float rear = lng == 0f ? 0f : Mathf.Atan((lat - yawRate * RearAxle.Length()) / Mathf.Abs(lng));
 
@@ -317,12 +321,25 @@ public class Car : RigidBody
         Vector3 rearLat = GetLateralForce(alpha.rear);
         Vector3 frontLat = GetLateralForce(alpha.front);
 
+        Vector3 corneringForce = (rearLat.Normalized() * GetTyreLoad()) + (Mathf.Cos(GetDeltaAngle()) * frontLat.Normalized() * GetTyreLoad());
+        Vector3 torque = (-rearLat * RearAxle.Length()) + (Mathf.Cos(GetDeltaAngle()) * frontLat * FrontAxle.Length());
+
+        float direction = -Mathf.Sign(GetVelocitySplit().lng);
+
+        corneringForce *= direction;
+        torque *= direction;
+
         if (Mathf.Abs(GetVelocitySplit().lng) > 0.01f)
         {
-            AddTorque((rearLat.Normalized() * GetTyreLoad()) * RearAxle.Length());
-            AddTorque((rearLat.Normalized() * GetTyreLoad()) * RearAxle.Length());
-            AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()));
-            AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()));
+            /*AddCentralForce(Transform.basis.x * (Mathf.Cos(GetDeltaAngle()) * frontLat.y * 2f * direction));
+
+            AddTorque((rearLat.Normalized() * GetTyreLoad()) * RearAxle.Length() * direction);
+            AddTorque((rearLat.Normalized() * GetTyreLoad()) * RearAxle.Length() * direction);
+            AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);
+            AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);*/
+
+            AddCentralForce(Transform.basis.x * corneringForce.y);
+            AddTorque(torque);
         }
     }
 

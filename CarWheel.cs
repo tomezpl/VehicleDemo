@@ -33,6 +33,8 @@ public class CarWheel : Spatial
 
     public Spatial ParentAxle;
 
+    private Vector3 LastFramePos = Vector3.Zero;
+
     // Declare member variables here. Examples:
     // private int a = 2;
     // private string b = "text";
@@ -60,6 +62,8 @@ public class CarWheel : Spatial
         BaseRollRotation = new Quat(Rotation);
 
         BaseOffset = Translation.y;
+
+        LastFramePos = GlobalTransform.origin;
     }
 
     /// <summary>
@@ -74,12 +78,14 @@ public class CarWheel : Spatial
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(float delta)
     {
-        float carLinearVelocity = ParentCar.LinearVelocity.Length();
+        float carLinearVelocity = (LastFramePos - GlobalTransform.origin).Length() / delta;
 
         if(IsDriveWheel)
         {
             carLinearVelocity += ParentCar.Acceleration.z * delta * 5f;
         }
+
+        carLinearVelocity *= 3f;
         
         float angularVelocity = (carLinearVelocity / WheelRadius) * ParentCar.Transform.basis.z.Normalized().Dot(-ParentCar.LinearVelocity.Normalized());
 
@@ -93,6 +99,8 @@ public class CarWheel : Spatial
         }
 
         Rotation = (newTurnRot * BaseRollRotation).Normalized().GetEuler();
+
+        LastFramePos = GlobalTransform.origin;
     }
 
     public override void _PhysicsProcess(float delta)
