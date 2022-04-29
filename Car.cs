@@ -34,7 +34,7 @@ public class Car : RigidBody
     [Export]
     public Vector2 GamepadFreeLookSensitivity = Vector2.One;
 
-    public float EngineSpeed = 330f;
+    public float EngineSpeed = 130f;
 
     // test value
     // todo: compute an aerodynamic drag coefficient based on car frontal area
@@ -133,10 +133,13 @@ public class Car : RigidBody
         }
         else
         {
-            WheelTurn = Mathf.Clamp(WheelTurn + WheelTurnRate * delta * Mathf.Sign(LatestCorneringInput), -Mathf.Abs(LatestCorneringInput), Mathf.Abs(LatestCorneringInput));
+            float maxTurnValue = Mathf.Sign(LatestCorneringInput) == -1f ? MaxWheelYaw : Mathf.Abs(LatestCorneringInput);
+            float minTurnValue = Mathf.Sign(LatestCorneringInput) == 1f ? -MaxWheelYaw : -Mathf.Abs(LatestCorneringInput);
+            WheelTurn = Mathf.Clamp(WheelTurn + WheelTurnRate * delta * Mathf.Sign(LatestCorneringInput), minTurnValue, maxTurnValue);
         }
 
-        AnimateWeightTransfer(Acceleration.z * Acceleration.Normalized().Dot(ForwardVector), delta);
+        Vector3 localAcceleration = GetLocalAcceleration();
+        AnimateWeightTransfer(localAcceleration.z, delta);
 
         if(ChaseCam != null)
         {
@@ -180,18 +183,23 @@ public class Car : RigidBody
         //DrawLine(Vector3.Zero, ChassisAngularVelocity * 3f, Colors.Pink);
 
         (float front, float rear) alpha = GetSlipAngles();
-        Vector3 rearLat = GetLateralForce(alpha.rear);
-        Vector3 frontLat = GetLateralForce(alpha.front);
+        Vector3 rearLat = GetLateralForce(alpha.rear, GetRearWeight(GetLocalAcceleration().z));
+        Vector3 frontLat = GetLateralForce(alpha.front, GetFrontWeight(GetLocalAcceleration().z));
 
         float deltaAngle = GetDeltaAngle();
 
+        float direction = Mathf.Sign(GetVelocitySplit().lng);
+
         Vector3 torque = GetCorneringTorque(rearLat, frontLat, deltaAngle);
+        torque *= direction;
         var torqueSplit = GetCorneringTorqueSplit(rearLat, frontLat, deltaAngle);
         DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + torque, Colors.Purple);
 
-        float direction = -Mathf.Sign(GetVelocitySplit().lng);
-        Vector3 netCorneringForce = GetNetCorneringForce(rearLat, frontLat, deltaAngle);
-        DrawLine(Vector3.Up * 0.2f, Vector3.Up * 0.2f + Vector3.Right * netCorneringForce.y, Colors.Cornflower);
+        Vector3 netCorneringForce = -GetNetCorneringForce(rearLat, frontLat, deltaAngle);
+
+        netCorneringForce *= direction;
+
+        DrawLine(Vector3.Up * 0.2f, Vector3.Up * 0.2f + (Vector3.Right * netCorneringForce.y), Colors.Cornflower);
 
         Vector3 wheelOrigin = Vector3.Forward * 0.3f + Vector3.Right * 0.1f;
         //DrawLine(wheelOrigin, wheelOrigin + Vector3.Right * Mathf.Sin(deltaAngle), Colors.Cyan);
@@ -216,7 +224,7 @@ public class Car : RigidBody
             DebugText.Text += $"\nfLateral, front: {frontLat.ToString("f")}";
             DebugText.Text += $"\nfLateral, rear: {rearLat.ToString("f")}";
             DebugText.Text += $"\nDelta Angle: {GetDeltaAngle():f}";
-            DebugText.Text += $"\nSlip Angle: {GetSlipAngles().front:f}";
+            DebugText.Text += $"\nSlip Angle: {GetSlipAngles().front:f}rad, {Mathf.Rad2Deg(GetSlipAngles().front):f}deg";
             DebugText.Text += $"\nTyre load: {GetTyreLoad():f}";
         }
     }
@@ -257,7 +265,7 @@ public class Car : RigidBody
     public (float lng, float lat) GetVelocitySplit()
     {
         float magnitude = LinearVelocity.Length();
-        if(magnitude < 0.0001f)
+        if(magnitude < 0.2f)
         {
             return (0f, 0f);
         }
@@ -271,19 +279,60 @@ public class Car : RigidBody
         return Vector3.Down * Weight / 4f;
     }
 
-    public Vector3 GetLateralForce(float slipAngle)
+    public float SlipAngleCurve(float slipAngleDeg)
     {
-        return UpVector * CorneringStiffness * slipAngle;
+        float absAngle = Mathf.Abs(slipAngleDeg);
+        if(absAngle < 90f)
+        {
+            const float curveLoad = 5000f;
+            const float peakLat = 5750f / curveLoad;
+            const float minLat = 5400f / curveLoad;
+
+            float lateralForce = Mathf.Lerp(minLat, peakLat, absAngle / 90f) * Mathf.Sign(slipAngleDeg);
+            return lateralForce;
+        }
+        else
+        {
+            return 0f;
+        }
+    }
+
+    public Vector3 GetLateralForce(float slipAngle, float tyreLoad)
+    {
+        float slipAngleDeg = Mathf.Rad2Deg(slipAngle);
+
+        if (Mathf.Abs(slipAngleDeg) < 15f)
+        {
+            return UpVector * CorneringStiffness * slipAngle;
+        }
+        else
+        {
+            return UpVector * SlipAngleCurve(slipAngle) * tyreLoad;
+        }
     }
 
     public float GetTurnRadius(float deltaAngle)
     {
-        return Mathf.Sin(deltaAngle);
+        if (Mathf.Abs(deltaAngle) < 0.002f)
+        {
+            return 0f;
+        }
+        else
+        {
+            return WheelBase / Mathf.Sin(deltaAngle);
+        }
     }
 
     public float GetTurnRate(float turnRadius)
     {
-        return LinearVelocity.Length() / turnRadius;
+        if (turnRadius == 0f)
+        {
+            return 0f;
+        }
+        else
+        {
+            return LinearVelocity.Length() / turnRadius;
+        }
     }
 
     /// <summary>
@@ -298,7 +347,7 @@ public class Car : RigidBody
 
         float yawRate = GetTurnRate(GetTurnRadius(delta));
 
-        float front = (lng == 0f ? 0f : Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng))) - delta * -Mathf.Sign(lng);
+        float front = (lng == 0f ? 0f : Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng))) - delta * Mathf.Sign(lng);
 
         float rear = lng == 0f ? 0f : Mathf.Atan((lat - yawRate * RearAxle.Length()) / Mathf.Abs(lng));
 
@@ -324,17 +373,17 @@ public class Car : RigidBody
         Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
 
         (float front, float rear) alpha = GetSlipAngles();
-        Vector3 rearLat = GetLateralForce(alpha.rear);
-        Vector3 frontLat = GetLateralForce(alpha.front);
+        Vector3 rearLat = GetLateralForce(alpha.rear, GetRearWeight(GetLocalAcceleration().z));
+        Vector3 frontLat = GetLateralForce(alpha.front, GetFrontWeight(GetLocalAcceleration().z));
 
         float deltaAngle = GetDeltaAngle();
         Vector3 corneringForce = GetNetCorneringForce(rearLat, frontLat, deltaAngle);
         Vector3 torque = GetCorneringTorque(rearLat, frontLat, deltaAngle);
 
-        float direction = -Mathf.Sign(GetVelocitySplit().lng);
+        float direction = Mathf.Sign(GetVelocitySplit().lng);
 
         corneringForce *= direction;
-        //torque *= direction;
+        torque *= direction;
 
         //if (Mathf.Abs(GetVelocitySplit().lng) > 0.01f)
         {
@@ -345,20 +394,27 @@ public class Car : RigidBody
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);*/
 
-            AddCentralForce(-Transform.basis.x * corneringForce.y);
-            AddTorque(torque);
+            AddCentralForce(RightVector * corneringForce.y);
+            AddCentralForce(-ForwardVector * direction * corneringForce.y);
+            AddTorque(-torque);
         }
+    }
+
+    protected Vector3 GetLocalAcceleration()
+    {
+        return (RightVector * Acceleration) + (UpVector * Acceleration) + (ForwardVector * Acceleration) * -1f;
     }
 
     protected Vector3 GetNetCorneringForce(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
     {
-        return (rearLat.Normalized() * GetTyreLoad()) + (Mathf.Cos(deltaAngle) * frontLat.Normalized() * GetTyreLoad());
+        Vector3 localAcceleration = GetLocalAcceleration();
+        return (rearLat.Normalized() * GetRearWeight(localAcceleration.z)) + (Mathf.Cos(deltaAngle) * frontLat.Normalized() * GetFrontWeight(localAcceleration.z));
     }
 
     protected Vector3 GetCorneringTorque(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
     {
         var torque = GetCorneringTorqueSplit(rearLat, frontLat, deltaAngle);
-        return torque.rear - torque.front;
+        return torque.rear + torque.front;
     }
     protected (Vector3 rear, Vector3 front) GetCorneringTorqueSplit(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
     {
