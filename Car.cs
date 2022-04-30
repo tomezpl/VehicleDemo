@@ -271,7 +271,7 @@ public class Car : RigidBody
         }
 
         Vector3 normV = LinearVelocity.Normalized();
-        return (-Transform.basis.z.Dot(normV) * magnitude, -Transform.basis.x.Dot(normV) * magnitude);
+        return (-Transform.basis.z.Dot(normV) * magnitude, Transform.basis.x.Dot(normV) * magnitude);
     }
 
     public Vector3 GetTyreLoad()
