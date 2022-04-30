@@ -331,7 +331,7 @@ public class Car : RigidBody
         }
         else
         {
-            return LinearVelocity.Length() / turnRadius;
+            return Mathf.Abs(GetVelocitySplit().lat) / turnRadius;
         }
     }
 
@@ -383,7 +383,7 @@ public class Car : RigidBody
         float direction = Mathf.Sign(GetVelocitySplit().lng);
 
         corneringForce *= direction;
-        torque *= direction;
+        //torque *= direction;
 
         //if (Mathf.Abs(GetVelocitySplit().lng) > 0.01f)
         {
@@ -396,7 +396,7 @@ public class Car : RigidBody
 
             AddCentralForce(RightVector * corneringForce.y);
             AddCentralForce(-ForwardVector * direction * corneringForce.y);
-            AddTorque(-torque);
+            AddTorque(torque);
         }
     }
 
@@ -408,7 +408,7 @@ public class Car : RigidBody
     protected Vector3 GetNetCorneringForce(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
     {
         Vector3 localAcceleration = GetLocalAcceleration();
-        return (rearLat.Normalized() * GetRearWeight(localAcceleration.z)) + (Mathf.Cos(deltaAngle) * frontLat.Normalized() * GetFrontWeight(localAcceleration.z));
+        return (rearLat.Normalized() * Mathf.Abs(GetRearWeight(localAcceleration.z))) - (Mathf.Cos(deltaAngle) * frontLat.Normalized() * Mathf.Abs(GetFrontWeight(localAcceleration.z)));
     }
 
     protected Vector3 GetCorneringTorque(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
