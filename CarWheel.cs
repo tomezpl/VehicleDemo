@@ -82,7 +82,7 @@ public class CarWheel : Spatial
 
         if(IsDriveWheel)
         {
-            carLinearVelocity += ParentCar.Acceleration.z * delta * 5f;
+            carLinearVelocity += ParentCar.GetLocalAcceleration().z * delta * 5f;
         }
 
         carLinearVelocity *= 3f;

@@ -88,6 +88,8 @@ public class Car : RigidBody
     [Export]
     public float WheelRecoverRate = 0.5f;
 
+    public float CarWidth = 1f;
+
     // Declare member variables here. Examples:
     // private int a = 2;
     // private string b = "text";
@@ -118,6 +120,9 @@ public class Car : RigidBody
         DebugText = GetNodeOrNull<Label>(DebugTextNode ?? "");
 
         FrontAxleBaseRotation = GetNode<Spatial>(FrontAxleNode).Rotation;
+
+        CarWidth = 2f * ((Vector3)(FindNode("CollisionShape") as CollisionShape).Shape.Get("extents")).x;
+        GD.Print(CarWidth);
     }
 
     // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -129,7 +134,7 @@ public class Car : RigidBody
         LatestCorneringInput = Input.GetAxis(InputBindings.Names.TurnLeft, InputBindings.Names.TurnRight);
 
         Vector3 localAcceleration = GetLocalAcceleration();
-        AnimateWeightTransfer(localAcceleration.z, delta);
+        AnimateWeightTransfer(localAcceleration, delta);
 
         if(ChaseCam != null)
         {
@@ -203,7 +208,7 @@ public class Car : RigidBody
             //DebugText.Text += $"Chassis Angular Velocity: {ChassisAngularVelocity.ToString("f")}";
             //DebugText.Text += $"\nChassis Rotation: {CarChassis.RotationDegrees.ToString("f")}";
             //DebugText.Text += $"\nAcceleration: {Acceleration.ToString("f")}";
-            DebugText.Text += $"\nVelocity: {LinearVelocity.ToString("f")}";
+            DebugText.Text += $"\nVelocity: {new Vector3(lat, 0f, lng).ToString("f")}";
             //DebugText.Text += $"\nRearWeight: {(GetRearWeight(Acceleration.Length()) - GetRearWeight(0f)).ToString("f")}";
             //DebugText.Text += $"\nFrontWeight: {(GetFrontWeight(Acceleration.Length()) - GetFrontWeight(0f)).ToString("f")}";
             //DebugText.Text += $"\nAcceleration %: {Acceleration.z / GetPeakAcceleration().z:f}";
@@ -416,9 +421,17 @@ public class Car : RigidBody
         }
     }
 
-    protected Vector3 GetLocalAcceleration()
+    public Vector3 GetLocalAcceleration()
     {
-        return (RightVector * Acceleration) + (UpVector * Acceleration) + (ForwardVector * Acceleration) * -1f;
+        float accelMagnitude = Acceleration.Length();
+        if(accelMagnitude == 0f)
+        {
+            return Vector3.Zero;
+        }
+
+        Vector3 accelNorm = Acceleration / accelMagnitude;
+
+        return -1f * new Vector3(RightVector.Dot(accelNorm) * accelMagnitude, UpVector.Dot(accelNorm) * accelMagnitude, ForwardVector.Dot(accelNorm) * accelMagnitude);
     }
 
     protected Vector3 GetNetCorneringForce(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
@@ -437,18 +450,22 @@ public class Car : RigidBody
         return ((-rearLat * RearAxle.Length()), (Mathf.Cos(deltaAngle) * frontLat * FrontAxle.Length()));
     }
 
-    protected void AnimateWeightTransfer(float acceleration, float delta)
+    protected void AnimateWeightTransfer(Vector3 acceleration, float delta)
     {
         // Weight force acting on each axle
-        float frontWeight = GetFrontWeight(acceleration);
-        float rearWeight = GetRearWeight(acceleration);
+        float frontWeight = GetFrontWeight(acceleration.z);
+        float rearWeight = GetRearWeight(acceleration.z);
 
         // Calculate inertia at each axle.
         // I = mr^2
         float frontInertia = Mass * FrontAxle.LengthSquared();
         float rearInertia = Mass * RearAxle.LengthSquared();
 
+        float sideRadius = CarWidth / 2f;
+        float sideInertia = Mass * sideRadius * sideRadius;
+
         float cosTheta = Mathf.Cos(CarChassis.Rotation.x);
+        float cosThetaZ = Mathf.Cos(CarChassis.Rotation.z);
 
         Vector3 peakAcceleration = GetPeakAcceleration();
 
@@ -458,19 +475,24 @@ public class Car : RigidBody
         Vector3 frontTorque = Vector3.Right * FrontAxle.Length() * frontWeight * cosTheta;
         Vector3 rearTorque = Vector3.Right * RearAxle.Length() * rearWeight * cosTheta;
 
+        float sideWeight = GetSideWeight(acceleration.x) - GetSideWeight(-acceleration.x);
+
+        Vector3 sideTorque = Vector3.Forward * sideRadius * sideWeight * cosThetaZ;
+
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
+        angularAcceleration -= sideTorque / sideInertia;
 
-        float maxRadians = (Mathf.Pi / 64f) * Mathf.Min(1f, Mathf.Abs((Acceleration.z / peakAcceleration.z)));
+        float maxRadians = (Mathf.Pi / 64f) * Mathf.Min(1f, Mathf.Abs(Acceleration.Length() / peakAcceleration.z));
 
         ChassisAngularVelocity -= angularAcceleration * delta;
         // TODO: Maybe check if the change since last frame was too drastic, to smooth out the velocity changes?
-        ChassisAngularVelocity = new Vector3(Mathf.Clamp(ChassisAngularVelocity.x, -maxRadians, maxRadians), ChassisAngularVelocity.y, ChassisAngularVelocity.z);
+        ChassisAngularVelocity = new Vector3(Mathf.Clamp(ChassisAngularVelocity.x, -maxRadians, maxRadians), ChassisAngularVelocity.y, Mathf.Clamp(ChassisAngularVelocity.z, -maxRadians, maxRadians));
         ChassisAngularVelocity -= ChassisAngularVelocity * WeightTransferDamping * delta;
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
-        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, CarChassis.Rotation.z);
+        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -maxRadians, maxRadians));
     }
 
     public void _on_RigidBody_body_entered(Node body)
@@ -494,6 +516,12 @@ public class Car : RigidBody
     protected float GetCarWeight()
     {
         return Mass * GravityScale * 9.81f;
+    }
+
+    protected float GetSideWeight(float acceleration)
+    {
+        float rideHeight = Mathf.Abs(((RearAxle + FrontAxle) / 2f).y - CarChassis.Translation.y);
+        return GetAxleWeight(acceleration, CarWidth / 2f, rideHeight);
     }
 
     protected float GetFrontWeight(float acceleration)
