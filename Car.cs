@@ -127,16 +127,6 @@ public class Car : RigidBody
 
         LatestEngineInput = Input.GetAxis(InputBindings.Names.Decelerate, InputBindings.Names.Accelerate);
         LatestCorneringInput = Input.GetAxis(InputBindings.Names.TurnLeft, InputBindings.Names.TurnRight);
-        if (Mathf.Abs(LatestCorneringInput) < 0.0001f)
-        {
-            WheelTurn = Mathf.Clamp(WheelTurn - WheelTurn * WheelRecoverRate * delta, -1f, 1f);
-        }
-        else
-        {
-            float maxTurnValue = Mathf.Sign(LatestCorneringInput) == -1f ? MaxWheelYaw : Mathf.Abs(LatestCorneringInput);
-            float minTurnValue = Mathf.Sign(LatestCorneringInput) == 1f ? -MaxWheelYaw : -Mathf.Abs(LatestCorneringInput);
-            WheelTurn = Mathf.Clamp(WheelTurn + WheelTurnRate * delta * Mathf.Sign(LatestCorneringInput), minTurnValue, maxTurnValue);
-        }
 
         Vector3 localAcceleration = GetLocalAcceleration();
         AnimateWeightTransfer(localAcceleration.z, delta);
@@ -224,7 +214,8 @@ public class Car : RigidBody
             DebugText.Text += $"\nfLateral, front: {frontLat.ToString("f")}";
             DebugText.Text += $"\nfLateral, rear: {rearLat.ToString("f")}";
             DebugText.Text += $"\nDelta Angle: {GetDeltaAngle():f}";
-            DebugText.Text += $"\nSlip Angle: {GetSlipAngles().front:f}rad, {Mathf.Rad2Deg(GetSlipAngles().front):f}deg";
+            DebugText.Text += $"\nSlip Angle FRONT: {GetSlipAngles().front:f}rad, {Mathf.Rad2Deg(GetSlipAngles().front):f}deg";
+            DebugText.Text += $"\nSlip Angle REAR: {GetSlipAngles().rear:f}rad, {Mathf.Rad2Deg(GetSlipAngles().rear):f}deg";
             DebugText.Text += $"\nTyre load: {GetTyreLoad():f}";
         }
     }
@@ -271,7 +262,7 @@ public class Car : RigidBody
         }
 
         Vector3 normV = LinearVelocity.Normalized();
-        return (-Transform.basis.z.Dot(normV) * magnitude, Transform.basis.x.Dot(normV) * magnitude);
+        return (Transform.basis.z.Dot(normV) * magnitude, Transform.basis.x.Dot(normV) * magnitude);
     }
 
     public Vector3 GetTyreLoad()
@@ -282,18 +273,20 @@ public class Car : RigidBody
     public float SlipAngleCurve(float slipAngleDeg)
     {
         float absAngle = Mathf.Abs(slipAngleDeg);
-        if(absAngle < 90f)
-        {
-            const float curveLoad = 5000f;
-            const float peakLat = 5750f / curveLoad;
-            const float minLat = 5400f / curveLoad;
 
-            float lateralForce = Mathf.Lerp(minLat, peakLat, absAngle / 90f) * Mathf.Sign(slipAngleDeg);
+        const float curveLoad = 5000f;
+        const float peakLat = 5750f / curveLoad;
+        const float minLat = 5400f / curveLoad;
+
+        if (absAngle < 50f)
+        {
+
+            float lateralForce = Mathf.Lerp(minLat, peakLat, absAngle / 50f) * Mathf.Sign(slipAngleDeg);
             return lateralForce;
         }
         else
         {
-            return 0f;
+            return minLat;
         }
     }
 
@@ -301,23 +294,33 @@ public class Car : RigidBody
     {
         float slipAngleDeg = Mathf.Rad2Deg(slipAngle);
 
-        if (Mathf.Abs(slipAngleDeg) < 15f)
+        float lowAngle = CorneringStiffness * slipAngle;
+
+        if (Mathf.Abs(slipAngleDeg) < 3f)
         {
-            return UpVector * CorneringStiffness * slipAngle;
+            return UpVector * lowAngle;
         }
         else
         {
-            return UpVector * SlipAngleCurve(slipAngle) * tyreLoad;
+            float highAngle = SlipAngleCurve(slipAngleDeg) * Mathf.Abs(tyreLoad);
+            if(Mathf.Abs(lowAngle) > highAngle)
+            {
+                return UpVector * lowAngle;
+            }
+            else
+            {
+                return UpVector * highAngle;
+            }
         }
     }
 
     public float GetTurnRadius(float deltaAngle)
     {
-        if (Mathf.Abs(deltaAngle) < 0.002f)
-        {
-            return 0f;
-        }
-        else
+        //if (Mathf.Abs(deltaAngle) < 0.00001f)
+        //{
+            //return 0f;
+        //}
+        //else
         {
             return WheelBase / Mathf.Sin(deltaAngle);
         }
@@ -325,13 +328,15 @@ public class Car : RigidBody
 
     public float GetTurnRate(float turnRadius)
     {
+        return AngularVelocity.y;
+
         if (turnRadius == 0f)
         {
             return 0f;
         }
         else
         {
-            return Mathf.Abs(GetVelocitySplit().lat) / turnRadius;
+            return -GetVelocitySplit().lat / turnRadius;
         }
     }
 
@@ -361,6 +366,17 @@ public class Car : RigidBody
 
     public override void _PhysicsProcess(float delta)
     {
+        if (Mathf.Abs(LatestCorneringInput) < 0.0001f)
+        {
+            WheelTurn = Mathf.Clamp(WheelTurn - WheelTurn * WheelRecoverRate * delta, -1f, 1f);
+        }
+        else
+        {
+            float maxTurnValue = Mathf.Sign(LatestCorneringInput) == -1f ? MaxWheelYaw : Mathf.Abs(LatestCorneringInput);
+            float minTurnValue = Mathf.Sign(LatestCorneringInput) == 1f ? -MaxWheelYaw : -Mathf.Abs(LatestCorneringInput);
+            WheelTurn = Mathf.Clamp(WheelTurn + WheelTurnRate * delta * Mathf.Sign(LatestCorneringInput), minTurnValue, maxTurnValue);
+        }
+
         VelocityLastFrame = LinearVelocity;
 
         Vector3 longAccel = (GetLongitudinalForce(LatestEngineInput) / Mass);
@@ -382,7 +398,7 @@ public class Car : RigidBody
 
         float direction = Mathf.Sign(GetVelocitySplit().lng);
 
-        corneringForce *= direction;
+        //corneringForce *= direction;
         //torque *= direction;
 
         //if (Mathf.Abs(GetVelocitySplit().lng) > 0.01f)
@@ -395,8 +411,8 @@ public class Car : RigidBody
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);*/
 
             AddCentralForce(RightVector * corneringForce.y);
-            AddCentralForce(-ForwardVector * direction * corneringForce.y);
-            AddTorque(torque);
+            //AddCentralForce(-ForwardVector * direction * corneringForce.y);
+            AddTorque(-torque);
         }
     }
 
@@ -408,7 +424,7 @@ public class Car : RigidBody
     protected Vector3 GetNetCorneringForce(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
     {
         Vector3 localAcceleration = GetLocalAcceleration();
-        return (rearLat.Normalized() * Mathf.Abs(GetRearWeight(localAcceleration.z))) - (Mathf.Cos(deltaAngle) * frontLat.Normalized() * Mathf.Abs(GetFrontWeight(localAcceleration.z)));
+        return rearLat + (Mathf.Cos(deltaAngle) * frontLat);
     }
 
     protected Vector3 GetCorneringTorque(Vector3 rearLat, Vector3 frontLat, float deltaAngle)
