@@ -242,7 +242,7 @@ public class Car : RigidBody
     public void CameraFreeLook(Vector2 cameraInput)
     {
         ChaseCam.Rotate(Vector3.Up, Mathf.Deg2Rad(-cameraInput.x) / 10f);
-        ChaseCam.Rotate(ChaseCam.Transform.basis.x, Mathf.Deg2Rad(-cameraInput.y) / 10f);
+        ChaseCam.Rotate(ChaseCam.Transform.basis.x.Normalized(), Mathf.Deg2Rad(-cameraInput.y) / 10f);
 
         float yaw = ChaseCam.Rotation.y;
         float pitch = ChaseCam.Rotation.x;
@@ -366,7 +366,7 @@ public class Car : RigidBody
 
     public float GetDeltaAngle()
     {
-        return WheelTurn * MaxWheelYaw;
+        return WheelTurn * MaxWheelYaw * 2f;
     }
 
     public override void _PhysicsProcess(float delta)
@@ -415,7 +415,7 @@ public class Car : RigidBody
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);*/
 
-            AddCentralForce(RightVector * corneringForce.y);
+            AddCentralForce(-RightVector * corneringForce.y);
             //AddCentralForce(-ForwardVector * direction * corneringForce.y);
             AddTorque(-torque);
         }
