@@ -14,9 +14,26 @@ public class CarWheel : Spatial
     [Export]
     public bool IsDriveWheel = false;
 
+    [Export]
+    public bool IsTurningWheel = false;
+
     public float WheelRadius = 1f;
 
     public float MaxSuspensionY = 0f;
+
+    private Quat BaseTurnRotation = Quat.Identity, BaseRollRotation = Quat.Identity;
+
+    private float BaseOffset = 0f;
+
+    [Export]
+    public Vector3 RotationAxis = Vector3.Right;
+
+    [Export]
+    public NodePath ParentAxleNode;
+
+    public Spatial ParentAxle;
+
+    private Vector3 LastFramePos = Vector3.Zero;
 
     // Declare member variables here. Examples:
     // private int a = 2;
@@ -35,9 +52,18 @@ public class CarWheel : Spatial
             WheelRadius = Mathf.Max(Mathf.Abs(wheelAabb.Size.y), Mathf.Abs(wheelAabb.Size.z));
         }
 
+        ParentAxle = GetNode<Spatial>(ParentAxleNode);
+
         // Store the predefined wheel local origin's Y coord as maximum spring length.
-        MaxSuspensionY = Translation.x;
-        Translation *= new Vector3(0f, 1f, 1f);
+        MaxSuspensionY = Translation.y - ParentAxle.Translation.y;
+        Translation -= Vector3.Up * MaxSuspensionY;
+
+        BaseTurnRotation = new Quat(Rotation) * new Quat(Vector3.Up, FlippedYAxis ? 0f : -Mathf.Pi);
+        BaseRollRotation = new Quat(Rotation);
+
+        BaseOffset = Translation.y;
+
+        LastFramePos = GlobalTransform.origin;
     }
 
     /// <summary>
@@ -52,15 +78,29 @@ public class CarWheel : Spatial
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(float delta)
     {
-        float carLinearVelocity = ParentCar.LinearVelocity.Length();
+        float carLinearVelocity = (LastFramePos - GlobalTransform.origin).Length() / delta;
 
         if(IsDriveWheel)
         {
-            carLinearVelocity += ParentCar.Acceleration.z * delta * 5f;
+            carLinearVelocity += ParentCar.GetLocalAcceleration().z * delta * 5f;
         }
+
+        carLinearVelocity *= 3f;
         
         float angularVelocity = (carLinearVelocity / WheelRadius) * ParentCar.Transform.basis.z.Normalized().Dot(-ParentCar.LinearVelocity.Normalized());
-        GlobalRotate(GlobalTransform.basis.x.Normalized(), angularVelocity * delta * (FlippedYAxis ? -1f : 1f));
+
+        BaseRollRotation *= new Quat(Vector3.Right, angularVelocity * delta * (FlippedYAxis ? -1f : 1f));
+
+        Quat newTurnRot = BaseTurnRotation;
+
+        if (IsTurningWheel)
+        {
+            newTurnRot *= new Quat(Vector3.Up * ParentCar.WheelTurn * ParentCar.MaxWheelYaw * -1f);
+        }
+
+        Rotation = (newTurnRot * BaseRollRotation).Normalized().GetEuler();
+
+        LastFramePos = GlobalTransform.origin;
     }
 
     public override void _PhysicsProcess(float delta)
@@ -70,7 +110,7 @@ public class CarWheel : Spatial
         if(raycast != null && raycast.Contains("position"))
         {
             Vector3 raycastHit = (Vector3)raycast["position"];
-            SetSpringDistance((raycastHit - axle.origin).Length());
+            //SetSpringDistance((raycastHit - axle.origin).Length());
         }
     }
 }

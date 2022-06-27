@@ -19,5 +19,9 @@ public static class InputBindings
         public const string LookDown = "LookDown";
 
         public const string LookUp = "LookUp";
+
+        public const string TurnLeft = "TurnLeft";
+
+        public const string TurnRight = "TurnRight";
     }
 }
