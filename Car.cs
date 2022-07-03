@@ -418,15 +418,15 @@ public class Car : RigidBody
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);*/
 
-            //AddCentralForce(RightVector * corneringForce.y * CorneringGrip * 2f);
 
             if (ActiveColliders > 0)
             {
+                AddCentralForce(RightVector * corneringForce.y);
                 LinearVelocity -= velocitySplit.lat * RightVector * CorneringGrip;
+                AddTorque(-torque);
             }
 
             //AddCentralForce(-ForwardVector * direction * corneringForce.y);
-            AddTorque(-torque);
         }
     }
 
