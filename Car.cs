@@ -80,6 +80,9 @@ public class Car : RigidBody
     [Export]
     public float CorneringStiffness = 0.4f;
 
+    [Export]
+    public float CorneringGrip = 1f;
+
     public float WheelTurn = 0f;
 
     [Export]
@@ -301,7 +304,7 @@ public class Car : RigidBody
 
         float lowAngle = CorneringStiffness * slipAngle;
 
-        if (Mathf.Abs(slipAngleDeg) < 3f)
+        if (Mathf.Abs(slipAngleDeg) < 30f)
         {
             return UpVector * lowAngle;
         }
@@ -314,7 +317,7 @@ public class Car : RigidBody
             }
             else
             {
-                return UpVector * highAngle;
+                return UpVector * Mathf.Deg2Rad(highAngle);
             }
         }
     }
@@ -400,8 +403,8 @@ public class Car : RigidBody
         float deltaAngle = GetDeltaAngle();
         Vector3 corneringForce = GetNetCorneringForce(rearLat, frontLat, deltaAngle);
         Vector3 torque = GetCorneringTorque(rearLat, frontLat, deltaAngle);
-
-        float direction = Mathf.Sign(GetVelocitySplit().lng);
+        (float lng, float lat) velocitySplit = GetVelocitySplit();
+        float direction = Mathf.Sign(velocitySplit.lng);
 
         //corneringForce *= direction;
         //torque *= direction;
@@ -415,7 +418,13 @@ public class Car : RigidBody
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);
             AddTorque(frontLat.Normalized() * GetTyreLoad() * FrontAxle.Length() * Mathf.Cos(GetDeltaAngle()) * direction);*/
 
-            AddCentralForce(-RightVector * corneringForce.y);
+            //AddCentralForce(RightVector * corneringForce.y * CorneringGrip * 2f);
+
+            if (ActiveColliders > 0)
+            {
+                LinearVelocity -= velocitySplit.lat * RightVector * CorneringGrip;
+            }
+
             //AddCentralForce(-ForwardVector * direction * corneringForce.y);
             AddTorque(-torque);
         }

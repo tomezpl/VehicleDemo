@@ -47,6 +47,7 @@ MaxWheelYaw = 0.271
 WeightTransferDamping = 0.897
 DebugTextNode = NodePath("../CanvasLayer/Label")
 CorneringStiffness = 450.0
+CorneringGrip = 0.037
 WheelTurnRate = 2.0
 WheelRecoverRate = 3.0
 
