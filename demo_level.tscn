@@ -132,5 +132,10 @@ margin_bottom = 596.0
 text = "Test"
 valign = 2
 
+[node name="CSGBox" type="CSGBox" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.900812, 0.936645, 0, -0.434209, 1.94317, 12.7493, -0.710753, 0 )
+use_collision = true
+height = 1.69476
+
 [connection signal="body_entered" from="RigidBody" to="RigidBody" method="_on_RigidBody_body_entered"]
 [connection signal="body_exited" from="RigidBody" to="RigidBody" method="_on_RigidBody_body_exited"]
