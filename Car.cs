@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public class Car : RigidBody
+public partial class Car : RigidBody
 {
     [Export]
     public NodePath ChaseCamNode;
@@ -56,11 +56,7 @@ public class Car : RigidBody
     // Tyre friction coefficient (mu).
     private float TyreFriction = 1f;
 
-    private float RunningTime = 0f;
-
     private float WheelBase = 0f;
-
-    private Vector2 LastMousePosition = Vector2.Zero;
 
     public Vector3 Acceleration = Vector3.Zero, VelocityLastFrame = Vector3.Zero;
 
@@ -92,10 +88,6 @@ public class Car : RigidBody
     public float WheelRecoverRate = 0.5f;
 
     public float CarWidth = 1f;
-
-    // Declare member variables here. Examples:
-    // private int a = 2;
-    // private string b = "text";
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
@@ -131,101 +123,28 @@ public class Car : RigidBody
     // Called every frame. 'delta' is the elapsed time since the previous frame.
     public override void _Process(float delta)
     {
-        RunningTime += delta;
-
         LatestEngineInput = Input.GetAxis(InputBindings.Names.Decelerate, InputBindings.Names.Accelerate);
         LatestCorneringInput = Input.GetAxis(InputBindings.Names.TurnLeft, InputBindings.Names.TurnRight);
 
         Vector3 localAcceleration = GetLocalAcceleration();
         AnimateWeightTransfer(localAcceleration, delta);
 
-        if(ChaseCam != null)
-        {
-            //CameraFreeLook(Input.GetLastMouseSpeed());
-        }
-
         CameraFreeLook(new Vector2(Input.GetActionStrength(InputBindings.Names.LookRight) - Input.GetActionStrength(InputBindings.Names.LookLeft), Input.GetActionStrength(InputBindings.Names.LookUp) - Input.GetActionStrength(InputBindings.Names.LookDown)) * GamepadFreeLookSensitivity);
 
-        DebugDraw();
-    }
-
-    protected void DrawLine(Vector3 start, Vector3 end, Color color)
-    {
-        DebugGeometry.SetColor(color);
-        DebugGeometry.AddVertex(start);
-        DebugGeometry.SetColor(color);
-        DebugGeometry.AddVertex(end);
-    }
-
-    protected void DebugDraw()
-    {
-        DebugGeometry.Clear();
-        DebugGeometry.Begin(Mesh.PrimitiveType.Lines);
-
-        // Draw rear axle
-        //DrawLine(CarChassis.Translation, RearAxle, Colors.Red);
-
-        // Draw front axle
-        //DrawLine(CarChassis.Translation, FrontAxle, Colors.DarkRed);
-
-        // Draw rear axle weight
-        //DrawLine(RearAxle, RearAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.Cyan);
-
-        // Draw front axle weight
-        //DrawLine(FrontAxle, FrontAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.DarkCyan);
-
-        (float lng, float lat) = GetVelocitySplit();
-        DrawLine(Vector3.Zero, Vector3.Forward * lng, Colors.Blue);
-        DrawLine(Vector3.Zero, Vector3.Right * lat, Colors.Red);
-
-        //DrawLine(Vector3.Zero, ChassisAngularVelocity * 3f, Colors.Pink);
-
-        (float front, float rear) alpha = GetSlipAngles();
-        Vector3 rearLat = GetLateralForce(alpha.rear, GetRearWeight(GetLocalAcceleration().z));
-        Vector3 frontLat = GetLateralForce(alpha.front, GetFrontWeight(GetLocalAcceleration().z));
-
+        (float front, float rear) slipAngles = GetSlipAngles();
+        Vector3 rearLat = GetLateralForce(slipAngles.rear, GetRearWeight(localAcceleration.z));
+        Vector3 frontLat = GetLateralForce(slipAngles.front, GetFrontWeight(localAcceleration.z));
         float deltaAngle = GetDeltaAngle();
 
-        float direction = Mathf.Sign(GetVelocitySplit().lng);
-
-        Vector3 torque = GetCorneringTorque(rearLat, frontLat, deltaAngle);
-        torque *= direction;
-        var torqueSplit = GetCorneringTorqueSplit(rearLat, frontLat, deltaAngle);
-        DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + torque, Colors.Purple);
-
-        Vector3 netCorneringForce = -GetNetCorneringForce(rearLat, frontLat, deltaAngle);
-
-        netCorneringForce *= direction;
-
-        DrawLine(Vector3.Up * 0.2f, Vector3.Up * 0.2f + (Vector3.Right * netCorneringForce.y), Colors.Cornflower);
-
-        Vector3 wheelOrigin = Vector3.Forward * 0.3f + Vector3.Right * 0.1f;
-        //DrawLine(wheelOrigin, wheelOrigin + Vector3.Right * Mathf.Sin(deltaAngle), Colors.Cyan);
-
-        DebugGeometry.End();
-
-        if(DebugText != null)
-        {
-            DebugText.Text = "";
-
-            //DebugText.Text += $"Chassis Angular Velocity: {ChassisAngularVelocity.ToString("f")}";
-            //DebugText.Text += $"\nChassis Rotation: {CarChassis.RotationDegrees.ToString("f")}";
-            //DebugText.Text += $"\nAcceleration: {Acceleration.ToString("f")}";
-            DebugText.Text += $"\nVelocity: {new Vector3(lat, 0f, lng).ToString("f")}";
-            //DebugText.Text += $"\nRearWeight: {(GetRearWeight(Acceleration.Length()) - GetRearWeight(0f)).ToString("f")}";
-            //DebugText.Text += $"\nFrontWeight: {(GetFrontWeight(Acceleration.Length()) - GetFrontWeight(0f)).ToString("f")}";
-            //DebugText.Text += $"\nAcceleration %: {Acceleration.z / GetPeakAcceleration().z:f}";
-            DebugText.Text += $"\nfCornering: {netCorneringForce.ToString("f")}";
-            DebugText.Text += $"\ntorque: {torque.ToString("f")}";
-            DebugText.Text += $"\ntorque REAR: {torqueSplit.rear.ToString("f")}";
-            DebugText.Text += $"\ntorque FRONT: {torqueSplit.front.ToString("f")}";
-            DebugText.Text += $"\nfLateral, front: {frontLat.ToString("f")}";
-            DebugText.Text += $"\nfLateral, rear: {rearLat.ToString("f")}";
-            DebugText.Text += $"\nDelta Angle: {GetDeltaAngle():f}";
-            DebugText.Text += $"\nSlip Angle FRONT: {GetSlipAngles().front:f}rad, {Mathf.Rad2Deg(GetSlipAngles().front):f}deg";
-            DebugText.Text += $"\nSlip Angle REAR: {GetSlipAngles().rear:f}rad, {Mathf.Rad2Deg(GetSlipAngles().rear):f}deg";
-            DebugText.Text += $"\nTyre load: {GetTyreLoad():f}";
-        }
+        DebugDraw
+        (
+            GetVelocitySplit(),
+            rearLat,
+            frontLat,
+            GetCorneringTorque(rearLat, frontLat, deltaAngle),
+            deltaAngle,
+            GetNetCorneringForce(rearLat, frontLat, deltaAngle)
+        );
     }
 
     public override void _Input(InputEvent @event)
@@ -237,7 +156,6 @@ public class Car : RigidBody
                 Vector2 mousePos = (@event as InputEventMouseMotion).Relative;
 
                 CameraFreeLook(mousePos);
-                LastMousePosition = mousePos;
             }
         }
     }
@@ -288,7 +206,6 @@ public class Car : RigidBody
 
         if (absAngle < 50f)
         {
-
             float lateralForce = Mathf.Lerp(minLat, peakLat, absAngle / 50f) * Mathf.Sign(slipAngleDeg);
             return lateralForce;
         }
