@@ -277,16 +277,22 @@ public partial class Car : RigidBody
 
         float yawRate = GetTurnRate(GetTurnRadius(delta));
 
-        float front = (lng == 0f ? 0f : Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng))) - delta * Mathf.Sign(lng);
+        float front = lng == 0f ? 0f : (Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng)) - delta * Mathf.Sign(lng));
 
         float rear = lng == 0f ? 0f : Mathf.Atan((lat - yawRate * RearAxle.Length()) / Mathf.Abs(lng));
+
+        // Very hacky solution to the car's jerky angular motion when coming to a stop.
+        if (Mathf.Abs(yawRate) < 0.2f && Mathf.Abs(lng) < 1f)
+        {
+            return (front * 0.5f, rear * 0.5f);
+        }
 
         return (front, rear);
     }
 
     public float GetDeltaAngle()
     {
-        return WheelTurn * MaxWheelYaw * 2f;
+        return WheelTurn * MaxWheelYaw;
     }
 
     public override void _PhysicsProcess(float delta)
