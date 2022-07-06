@@ -2,6 +2,12 @@
 
 public partial class Car
 {
+    /// <summary>
+    /// Utility method to draw a line from a starting point to an end point with a given color.
+    /// </summary>
+    /// <param name="start">Start point.</param>
+    /// <param name="end">End point.</param>
+    /// <param name="color">Color to draw the line with.</param>
     protected void DrawLine(Vector3 start, Vector3 end, Color color)
     {
         DebugGeometry.SetColor(color);
@@ -10,6 +16,15 @@ public partial class Car
         DebugGeometry.AddVertex(end);
     }
 
+    /// <summary>
+    /// Draws various debug info.
+    /// </summary>
+    /// <param name="velocity">Longitudinal and lateral velocity of the car (ie. local Z and X)</param>
+    /// <param name="rearLat"></param>
+    /// <param name="frontLat"></param>
+    /// <param name="torque"></param>
+    /// <param name="deltaAngle"></param>
+    /// <param name="netCorneringForce"></param>
     protected void DebugDraw((float lng, float lat) velocity, Vector3 rearLat, Vector3 frontLat, Vector3 torque, float deltaAngle, Vector3 netCorneringForce)
     {
         DebugGeometry.Clear();
