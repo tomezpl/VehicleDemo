@@ -251,10 +251,22 @@ public partial class Car : RigidBody
         }
     }
 
+    public float GetActualTurnRate()
+    {
+        float magnitude = AngularVelocity.Length();
+
+        if(magnitude == 0f)
+        {
+            return 0f;
+        }
+
+        Vector3 normAngularVel = AngularVelocity / magnitude;
+
+        return UpVector.Dot(normAngularVel) * magnitude;
+    }
+
     public float GetTurnRate(float turnRadius)
     {
-        return AngularVelocity.y;
-
         if (turnRadius == 0f)
         {
             return 0f;
@@ -280,12 +292,6 @@ public partial class Car : RigidBody
         float front = lng == 0f ? 0f : (Mathf.Atan((lat + yawRate * FrontAxle.Length()) / Mathf.Abs(lng)) - delta * Mathf.Sign(lng));
 
         float rear = lng == 0f ? 0f : Mathf.Atan((lat - yawRate * RearAxle.Length()) / Mathf.Abs(lng));
-
-        // Very hacky solution to the car's jerky angular motion when coming to a stop.
-        if (Mathf.Abs(yawRate) < 0.2f && Mathf.Abs(lng) < 1f)
-        {
-            return (front * 0.5f, rear * 0.5f);
-        }
 
         return (front, rear);
     }
