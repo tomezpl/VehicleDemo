@@ -34,7 +34,11 @@ public partial class Car : RigidBody
     [Export]
     public Vector2 GamepadFreeLookSensitivity = Vector2.One;
 
+    [Export]
     public float EngineSpeed = 130f;
+
+    [Export]
+    public float BrakeStrength = 100f;
 
     // test value
     // todo: compute an aerodynamic drag coefficient based on car frontal area
@@ -45,6 +49,8 @@ public partial class Car : RigidBody
     private float LatestEngineInput = 0f;
 
     public float LatestCorneringInput = 0f;
+
+    private float LatestHandbrakeInput = 0f;
 
     [Export]
     public float MaxWheelYaw = Mathf.Pi / 8f;
@@ -125,6 +131,7 @@ public partial class Car : RigidBody
     {
         LatestEngineInput = Input.GetAxis(InputBindings.Names.Decelerate, InputBindings.Names.Accelerate);
         LatestCorneringInput = Input.GetAxis(InputBindings.Names.TurnLeft, InputBindings.Names.TurnRight);
+        LatestHandbrakeInput = Input.GetActionStrength(InputBindings.Names.Handbrake);
 
         Vector3 localAcceleration = GetLocalAcceleration();
         AnimateWeightTransfer(localAcceleration, delta);
@@ -172,7 +179,7 @@ public partial class Car : RigidBody
 
     public Vector3 GetPeakAcceleration()
     {
-        return GetLongitudinalForce(1f, true) / Mass;
+        return GetLongitudinalForce(1f, 0f, true) / Mass;
     }
 
     /// <summary>
@@ -316,7 +323,7 @@ public partial class Car : RigidBody
 
         VelocityLastFrame = LinearVelocity;
 
-        Vector3 longAccel = (GetLongitudinalForce(LatestEngineInput) / Mass);
+        Vector3 longAccel = (GetLongitudinalForce(LatestEngineInput, LatestHandbrakeInput) / Mass);
 
         if (ActiveColliders != 0)
         {
@@ -503,12 +510,17 @@ public partial class Car : RigidBody
         return -RollingResistance * LinearVelocity;
     }
 
+    protected Vector3 GetBrakeForce(float brakeInput, float engineInput)
+    {
+        return ForwardVector * Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -BrakeStrength * (GetVelocitySplit().lng > 0f ? -1f : 1f * Mathf.Sign(engineInput));
+    }
+
     /// <summary>
-    /// Longitudinal force exerted by the car wheels combined, including engine and resistance forces.
+    /// Longitudinal force exerted by the car wheels combined, including engine, brake and resistance forces.
     /// </summary>
     /// <returns></returns>
-    protected Vector3 GetLongitudinalForce(float engineInput, bool ignoreResistance = false)
+    protected Vector3 GetLongitudinalForce(float engineInput, float brakeInput, bool ignoreResistance = false)
     {
-        return ignoreResistance ? GetTractionForce(engineInput) : GetTractionForce(engineInput) + GetDragForce() + GetRollingResistance();
+        return ignoreResistance ? (GetTractionForce(engineInput) + GetBrakeForce(brakeInput, engineInput)) : (GetTractionForce(engineInput) + GetBrakeForce(brakeInput, engineInput) + GetDragForce() + GetRollingResistance());
     }
 }
