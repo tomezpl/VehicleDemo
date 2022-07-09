@@ -248,28 +248,7 @@ public partial class Car : RigidBody
 
     public float GetTurnRadius(float deltaAngle)
     {
-        //if (Mathf.Abs(deltaAngle) < 0.00001f)
-        //{
-            //return 0f;
-        //}
-        //else
-        {
-            return WheelBase / Mathf.Sin(deltaAngle);
-        }
-    }
-
-    public float GetActualTurnRate()
-    {
-        float magnitude = AngularVelocity.Length();
-
-        if(magnitude == 0f)
-        {
-            return 0f;
-        }
-
-        Vector3 normAngularVel = AngularVelocity / magnitude;
-
-        return UpVector.Dot(normAngularVel) * magnitude;
+        return WheelBase / Mathf.Sin(deltaAngle);
     }
 
     public float GetTurnRate(float turnRadius)
