@@ -3,9 +3,7 @@ using System;
 
 public partial class Car : RigidBody
 {
-    [Export]
-    public NodePath ChaseCamNode;
-
+    #region Node paths for car parts.
     [Export]
     public NodePath RearAxleNode;
 
@@ -15,85 +13,168 @@ public partial class Car : RigidBody
     [Export]
     public NodePath CarChassisNode;
 
-    private ImmediateGeometry DebugGeometry;
-
-    protected Vector3 RearAxle, FrontAxle;
+    /// <summary>
+    /// Car chassis node. Used for non-physics animation etc.
+    /// </summary>
     protected Spatial CarChassis;
+    #endregion
 
-    protected Vector3 FrontAxleBaseRotation = Vector3.Zero;
-
-    protected float FrontAxleSpan = 0f;
-
-    private Camera ChaseCam;
-
-    private Vector3 ForwardVector { get => -Transform.basis.Column2; }
-
-    private Vector3 RightVector { get => Transform.basis.Column0; }
-    private Vector3 UpVector { get => Transform.basis.Column1; }
-
+    #region Car physics parameters.
+    /// <summary>
+    /// Power delivered by the engine. Keep in mind this gets lost in transmisison etc.
+    /// </summary>
     [Export]
-    public Vector2 GamepadFreeLookSensitivity = Vector2.One;
+    public float EnginePower = 130f;
 
+    /// <summary>
+    /// Braking power of the handbrake.
+    /// </summary>
     [Export]
-    public float EngineSpeed = 130f;
+    public float HandbrakePower = 100f;
 
-    [Export]
-    public float BrakeStrength = 100f;
-
-    // test value
-    // todo: compute an aerodynamic drag coefficient based on car frontal area
-    public float AeroDrag = 0.4257f;
-
-    public float RollingResistance = 1f;
-
-    private float LatestEngineInput = 0f;
-
-    public float LatestCorneringInput = 0f;
-
-    private float LatestHandbrakeInput = 0f;
-
-    [Export]
-    public float MaxWheelYaw = Mathf.Pi / 8f;
-
-    private float CamDistance = 7f;
-
-    private int ActiveColliders = 0;
-
-    // Tyre friction coefficient (mu).
-    private float TyreFriction = 1f;
-
-    private float WheelBase = 0f;
-
-    public Vector3 Acceleration = Vector3.Zero, VelocityLastFrame = Vector3.Zero;
-
-    [Export]
-    public float PeakAcceleration = 20f;
-
-    private Vector3 ChassisAngularVelocity = Vector3.Zero;
-
+    /// <summary>
+    /// Damping rate to apply to the weight transfer rate.
+    /// </summary>
     [Export]
     public float WeightTransferDamping = 0.6f;
 
+    /// <summary>
+    /// Max angle the front wheels can turn (in radians).
+    /// </summary>
+    /// <remarks>This is the absolute value - sign will differ on left/right turn.</remarks>
     [Export]
-    public NodePath DebugTextNode;
+    public float MaxWheelYaw = Mathf.Pi / 8f;
 
-    protected Label DebugText;
+    /// <summary>
+    /// Tyre friction coefficient (mu).
+    /// </summary>
+    [Export]
+    public float TyreFriction = 1f;
 
+    /// <summary>
+    /// Aerodynamic drag coefficient.
+    /// </summary>
+    /// <remarks>TODO: A test value is being used now. Computing it from the car's projected frontal area (using air drag formula) could be more accurate.</remarks>
+    [Export]
+    public float AeroDrag = 0.4257f;
+
+    /// <summary>
+    /// Rolling resistance coefficient (ie. how much resistance does the car face because of rolling tyre deformation etc)
+    /// </summary>
+    [Export]
+    public float RollingResistance = 1f;
+
+    /// <summary>
+    /// Cornering stiffness constant. This is a "magic" constant, in the sense that there isn't any concrete data to use for it. Essentially an approximation.
+    /// </summary>
     [Export]
     public float CorneringStiffness = 0.4f;
 
     [Export]
     public float CorneringGrip = 1f;
+    #endregion
 
-    public float WheelTurn = 0f;
+    #region Gameplay parameters and nodes
+    /// <summary>
+    /// Node that will serve as the third-person camera.
+    /// </summary>
+    [Export]
+    public NodePath ChaseCamNode;
+
+    /// <summary>
+    /// Third-person camera node.
+    /// </summary>
+    private Camera ChaseCam;
+
+    /// <summary>
+    /// Distance to keep the third-person camera at.
+    /// </summary>
+    /// <remarks>Computed at startup based on <see cref="ChaseCam"/> offset from local origin.</remarks>
+    private float CamDistance = 7f;
+    #endregion
+
+    #region Input parameters
+    /// <summary>
+    /// Third-person camera orbit sensitivity for controller input.
+    /// </summary>
+    [Export]
+    public Vector2 GamepadFreeLookSensitivity = Vector2.One;
 
     [Export]
     public float WheelTurnRate = 0.2f;
 
     [Export]
     public float WheelRecoverRate = 0.5f;
+    #endregion
 
+    #region Debug
+    /// <summary>
+    /// An <see cref="ImmediateGeometry"/> node to draw debug shapes with.
+    /// </summary>
+    private ImmediateGeometry DebugGeometry;
+
+    /// <summary>
+    /// Node path to a text node used for displaying debug info.
+    /// </summary>
+    [Export]
+    public NodePath DebugTextNode;
+
+    /// <summary>
+    /// Text node used for outputting debug info to the screen.
+    /// </summary>
+    protected Label DebugText;
+    #endregion
+
+    #region Input state
+    private float LatestEngineInput = 0f;
+
+    public float LatestCorneringInput = 0f;
+
+    private float LatestHandbrakeInput = 0f;
+    #endregion
+
+    #region Car physical state
+    /// <summary>
+    /// Used for deriving the car's global <see cref="Acceleration"/> from its <see cref="RigidBody.LinearVelocity"/> and <see cref="VelocityLastFrame"/>.
+    /// </summary>
+    public Vector3 Acceleration = Vector3.Zero, VelocityLastFrame = Vector3.Zero;
+
+    /// <summary>
+    /// A percentage of <see cref="MaxWheelYaw"/> indicating how much the front wheels are turned.
+    /// </summary>
+    public float WheelTurn = 0f;
+
+    /// <summary>
+    /// Keeps track of collision contacts.
+    /// </summary>
+    private int ActiveColliders = 0;
+
+    /// <summary>
+    /// Angular velocity to apply for animating the <see cref="CarChassis"/>.
+    /// </summary>
+    private Vector3 ChassisAngularVelocity = Vector3.Zero;
+
+    private Vector3 ForwardVector { get => -Transform.basis.Column2; }
+    private Vector3 RightVector { get => Transform.basis.Column0; }
+    private Vector3 UpVector { get => Transform.basis.Column1; }
+    #endregion
+
+    #region Car physical properties determined from geometry
+    /// <summary>
+    /// Wheel base - ie. distance between front and rear wheels.
+    /// </summary>
+    private float WheelBase = 0f;
+
+    /// <summary>
+    /// Width of the car body.
+    /// </summary>
     public float CarWidth = 1f;
+
+    /// <summary>
+    /// Local offset of the axle.
+    /// </summary>
+    protected Vector3 RearAxle, FrontAxle;
+    #endregion
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
@@ -119,8 +200,6 @@ public partial class Car : RigidBody
 
         DebugGeometry = GetNodeOrNull<ImmediateGeometry>("ImmediateGeometry");
         DebugText = GetNodeOrNull<Label>(DebugTextNode ?? "");
-
-        FrontAxleBaseRotation = GetNode<Spatial>(FrontAxleNode).Rotation;
 
         CarWidth = 2f * ((Vector3)(FindNode("CollisionShape") as CollisionShape).Shape.Get("extents")).x;
         GD.Print(CarWidth);
@@ -533,7 +612,7 @@ public partial class Car : RigidBody
     /// <returns>Ftraction</returns>
     protected Vector3 GetTractionForce(float engineInput)
     {
-        return ForwardVector * engineInput * EngineSpeed;
+        return ForwardVector * engineInput * EnginePower;
     }
 
     /// <summary>
@@ -562,7 +641,7 @@ public partial class Car : RigidBody
     /// <returns></returns>
     protected Vector3 GetHandbrakeForce(float brakeInput, float engineInput)
     {
-        return ForwardVector * Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -BrakeStrength * (GetVelocitySplit().lng > 0f ? -1f : 1f * Mathf.Sign(engineInput));
+        return ForwardVector * Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -HandbrakePower * (GetVelocitySplit().lng > 0f ? -1f : 1f * Mathf.Sign(engineInput));
     }
 
     /// <summary>
