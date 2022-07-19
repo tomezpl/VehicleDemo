@@ -544,16 +544,17 @@ public partial class Car : RigidBody
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
         angularAcceleration -= sideTorque / sideInertia;
 
-        float maxRadians = (Mathf.Pi / 96f);
+        float maxRadians = Mathf.Pi / 96f;
         float maxRadiansZ = Mathf.Pi / 44f;
 
         ChassisAngularVelocity -= angularAcceleration * delta;
-        // TODO: Maybe check if the change since last frame was too drastic, to smooth out the velocity changes?
-        //ChassisAngularVelocity = new Vector3(Mathf.Clamp(ChassisAngularVelocity.x, -maxRadians, maxRadians), ChassisAngularVelocity.y, Mathf.Clamp(ChassisAngularVelocity.z, -maxRadians, maxRadians));
+        
+        // Dampen the weight transfer velocity.
         ChassisAngularVelocity -= ChassisAngularVelocity * WeightTransferDamping * delta;
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
+        // Dampen the suspension to bring it back to a relaxed state over time.
         CarChassis.Rotation -= CarChassis.Rotation * WeightTransferDamping * delta;
         CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -maxRadiansZ, maxRadiansZ));
     }
