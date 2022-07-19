@@ -535,21 +535,27 @@ public partial class Car : RigidBody
         float sideWeight = GetSideWeight(acceleration.x) - GetSideWeight(-acceleration.x);
 
         Vector3 sideTorque = Vector3.Forward * sideRadius * sideWeight * cosThetaZ;
+        
+        // Tom: not exactly sure why, but the sideways weight transfer only looks good when the torque is doubled.
+        // I suppose it might be because it technically occurs at both the front and rear axle?
+        sideTorque *= 2f;
 
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
         angularAcceleration -= sideTorque / sideInertia;
 
-        float maxRadians = (Mathf.Pi / 64f) * Mathf.Min(1f, Mathf.Abs(Acceleration.Length() / peakAcceleration.z));
+        float maxRadians = (Mathf.Pi / 96f);
+        float maxRadiansZ = Mathf.Pi / 44f;
 
         ChassisAngularVelocity -= angularAcceleration * delta;
         // TODO: Maybe check if the change since last frame was too drastic, to smooth out the velocity changes?
-        ChassisAngularVelocity = new Vector3(Mathf.Clamp(ChassisAngularVelocity.x, -maxRadians, maxRadians), ChassisAngularVelocity.y, Mathf.Clamp(ChassisAngularVelocity.z, -maxRadians, maxRadians));
+        //ChassisAngularVelocity = new Vector3(Mathf.Clamp(ChassisAngularVelocity.x, -maxRadians, maxRadians), ChassisAngularVelocity.y, Mathf.Clamp(ChassisAngularVelocity.z, -maxRadians, maxRadians));
         ChassisAngularVelocity -= ChassisAngularVelocity * WeightTransferDamping * delta;
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
-        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -maxRadians, maxRadians));
+        CarChassis.Rotation -= CarChassis.Rotation * WeightTransferDamping * delta;
+        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -maxRadiansZ, maxRadiansZ));
     }
 
     public void _on_RigidBody_body_entered(Node body)
