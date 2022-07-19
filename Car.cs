@@ -246,6 +246,10 @@ public partial class Car : RigidBody
         }
     }
 
+    /// <summary>
+    /// Orbit the camera around the player based on user input.
+    /// </summary>
+    /// <param name="cameraInput">User input from a controller device.</param>
     public void CameraFreeLook(Vector2 cameraInput)
     {
         ChaseCam.Rotate(Vector3.Up, Mathf.Deg2Rad(-cameraInput.x) / 10f);
@@ -356,6 +360,11 @@ public partial class Car : RigidBody
         return WheelBase / Mathf.Sin(deltaAngle);
     }
 
+    /// <summary>
+    /// Calculates the rate at which the car turns (angular velocity).
+    /// </summary>
+    /// <param name="turnRadius">Turn radius derived from the car's geometry and wheel heading.</param>
+    /// <returns>Omega (car turn rate)</returns>
     public float GetTurnRate(float turnRadius)
     {
         if (turnRadius == 0f || float.IsInfinity(turnRadius))
