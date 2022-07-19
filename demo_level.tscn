@@ -43,11 +43,12 @@ RearAxleNode = NodePath("RearAxle")
 FrontAxleNode = NodePath("FrontAxle")
 CarChassisNode = NodePath("car chassis")
 GamepadFreeLookSensitivity = Vector2( 7.5, 7.5 )
-MaxWheelYaw = 0.271
-WeightTransferDamping = 0.897
+BrakeStrength = 250.0
+MaxWheelYaw = 0.421
+WeightTransferDamping = 0.0
 DebugTextNode = NodePath("../CanvasLayer/Label")
-CorneringStiffness = 450.0
-CorneringGrip = 0.037
+CorneringStiffness = 600.0
+CorneringGrip = 0.067
 WheelTurnRate = 2.0
 WheelRecoverRate = 3.0
 

@@ -23,5 +23,7 @@ public static class InputBindings
         public const string TurnLeft = "TurnLeft";
 
         public const string TurnRight = "TurnRight";
+
+        public const string Handbrake = "Handbrake";
     }
 }
