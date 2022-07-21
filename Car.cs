@@ -38,6 +38,19 @@ public partial class Car : RigidBody
     [Export]
     public float WeightTransferDamping = 0.6f;
 
+
+    /// <summary>
+    /// Maximum pitch angle to animate the car's longitudinal weight transfer.
+    /// </summary>
+    [Export(PropertyHint.Range, "0, 1.57079637")]
+    public float WeightTransferMaxRadiansPitch = Mathf.Pi / 96f;
+
+    /// <summary>
+    /// Maximum roll angle to animate the car's lateral weight transfer.
+    /// </summary>
+    [Export(PropertyHint.Range, "0, 1.57079637")]
+    public float WeightTransferMaxRadiansRoll = Mathf.Pi / 44f;
+
     /// <summary>
     /// Max angle the front wheels can turn (in radians).
     /// </summary>
@@ -524,8 +537,6 @@ public partial class Car : RigidBody
         float cosTheta = Mathf.Cos(CarChassis.Rotation.x);
         float cosThetaZ = Mathf.Cos(CarChassis.Rotation.z);
 
-        Vector3 peakAcceleration = GetPeakAcceleration();
-
         // Calculate torque from force and radius.
         // ignore sin theta since we'll be always applying the force perpendicularly, thus 1.
         // TODO: actually, maybe do sin theta of car chassis x axis?
@@ -544,9 +555,6 @@ public partial class Car : RigidBody
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
         angularAcceleration -= sideTorque / sideInertia;
 
-        float maxRadians = Mathf.Pi / 96f;
-        float maxRadiansZ = Mathf.Pi / 44f;
-
         ChassisAngularVelocity -= angularAcceleration * delta;
         
         // Dampen the weight transfer velocity.
@@ -556,7 +564,7 @@ public partial class Car : RigidBody
 
         // Dampen the suspension to bring it back to a relaxed state over time.
         CarChassis.Rotation -= CarChassis.Rotation * WeightTransferDamping * delta;
-        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -maxRadians, maxRadians), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -maxRadiansZ, maxRadiansZ));
+        CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -WeightTransferMaxRadiansPitch, WeightTransferMaxRadiansPitch), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -WeightTransferMaxRadiansRoll, WeightTransferMaxRadiansRoll));
     }
 
     public void _on_RigidBody_body_entered(Node body)
