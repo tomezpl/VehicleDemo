@@ -200,7 +200,7 @@ public partial class Car : RigidBody
 
         ChaseCam = GetNode<Camera>(ChaseCamNode);
 
-        CamDistance = ChaseCam == null ? 7f : (Transform.origin - ChaseCam.Transform.origin).Length();
+        CamDistance = ChaseCam == null ? 7f : (GlobalTransform.origin - ChaseCam.GlobalTransform.origin).Length();
 
         Input.SetMouseMode(Input.MouseMode.Captured);
 
