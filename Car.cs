@@ -13,6 +13,9 @@ public partial class Car : RigidBody
     [Export]
     public NodePath CarChassisNode;
 
+    [Export]
+    public NodePath CarChassisCollisionNode;
+
     /// <summary>
     /// Car chassis node. Used for non-physics animation etc.
     /// </summary>
@@ -214,7 +217,7 @@ public partial class Car : RigidBody
         DebugGeometry = GetNodeOrNull<ImmediateGeometry>("ImmediateGeometry");
         DebugText = GetNodeOrNull<Label>(DebugTextNode ?? "");
 
-        CarWidth = 2f * ((Vector3)(FindNode("CollisionShape") as CollisionShape).Shape.Get("extents")).x;
+        CarWidth = 2f * ((Vector3)GetNode<CollisionShape>(CarChassisCollisionNode).Shape.Get("extents")).x;
         GD.Print(CarWidth);
     }
 
@@ -665,7 +668,7 @@ public partial class Car : RigidBody
     /// <returns></returns>
     protected Vector3 GetHandbrakeForce(float brakeInput, float engineInput)
     {
-        return ForwardVector * Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -HandbrakePower * (GetVelocitySplit().lng > 0f ? -1f : 1f * Mathf.Sign(engineInput));
+        return ForwardVector * Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -HandbrakePower * -Mathf.Sign(GetVelocitySplit().lng);
     }
 
     /// <summary>

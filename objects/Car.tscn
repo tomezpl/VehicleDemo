@@ -1,0 +1,106 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://objects/CarWheel.tscn" type="PackedScene" id=1]
+[ext_resource path="res://models/car chassis.glb" type="PackedScene" id=2]
+[ext_resource path="res://Car.cs" type="Script" id=3]
+[ext_resource path="res://CarWheel.cs" type="Script" id=4]
+
+[sub_resource type="PhysicsMaterial" id=8]
+friction = 0.91
+rough = true
+
+[sub_resource type="BoxShape" id=4]
+extents = Vector3( 0.535, 0.360654, 1.249 )
+
+[sub_resource type="SpatialMaterial" id=7]
+flags_unshaded = true
+flags_no_depth_test = true
+flags_do_not_receive_shadows = true
+vertex_color_use_as_albedo = true
+
+[node name="RigidBody" type="RigidBody"]
+mass = 780.0
+physics_material_override = SubResource( 8 )
+linear_damp = 0.853
+angular_damp = 7.339
+script = ExtResource( 3 )
+RearAxleNode = NodePath("RearAxle")
+FrontAxleNode = NodePath("FrontAxle")
+CarChassisNode = NodePath("car chassis")
+CarChassisCollisionNode = NodePath("ChassisCollision")
+EnginePower = 3000.0
+HandbrakePower = 3200.0
+WeightTransferDamping = 6.0
+WeightTransferMaxRadiansRoll = 0.088
+MaxWheelYaw = 0.421
+CorneringStiffness = 21500.0
+CorneringGrip = 0.068
+ChaseCamNode = NodePath("Camera")
+GamepadFreeLookSensitivity = Vector2( 7.5, 7.5 )
+WheelTurnRate = 2.0
+WheelRecoverRate = 3.0
+DebugTextNode = NodePath("../CanvasLayer/Label")
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.993638, 2.65058 )
+fov = 60.0
+
+[node name="ChassisCollision" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00370562, 0.163554, -0.00714102 )
+shape = SubResource( 4 )
+
+[node name="RearAxle" type="CSGCylinder" parent="."]
+transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.137012, 0.800166 )
+
+[node name="FrontAxle" type="CSGCylinder" parent="."]
+transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0.04, 0, -0.137237, -0.800991 )
+
+[node name="car chassis" parent="." instance=ExtResource( 2 )]
+
+[node name="ImmediateGeometry" type="ImmediateGeometry" parent="."]
+material_override = SubResource( 7 )
+
+[node name="RRightWheel" parent="." instance=ExtResource( 1 )]
+transform = Transform( 0.15, -2.98428e-13, 0, -3.33067e-16, 0.15, 0, 0, 0, 0.15, 0.425, -0.155607, 0.8 )
+script = ExtResource( 4 )
+ParentCarNode = NodePath("..")
+FlippedYAxis = true
+IsDriveWheel = true
+MaxSuspensionCompression = 0.189
+MaxSuspensionDroop = 0.26
+ParentAxleNode = NodePath("../RearAxle")
+DebugGeometryNode = NodePath("../ImmediateGeometry")
+
+[node name="RLeftWheel" parent="." instance=ExtResource( 1 )]
+transform = Transform( -0.150111, -2.98428e-13, -3.37067e-07, 7.77156e-16, 0.15, -1.31134e-08, 5.10548e-10, -1.31134e-08, -0.15, -0.425, -0.155607, 0.8 )
+script = ExtResource( 4 )
+ParentCarNode = NodePath("..")
+IsDriveWheel = true
+MaxSuspensionCompression = 0.189
+MaxSuspensionDroop = 0.26
+ParentAxleNode = NodePath("../RearAxle")
+DebugGeometryNode = NodePath("../ImmediateGeometry")
+
+[node name="FRightWheel" parent="." instance=ExtResource( 1 )]
+transform = Transform( 0.15, -2.98428e-13, 0, -3.33067e-16, 0.15, 0, 0, 0, 0.15, 0.425, -0.155607, -0.801 )
+script = ExtResource( 4 )
+ParentCarNode = NodePath("..")
+FlippedYAxis = true
+IsTurningWheel = true
+MaxSuspensionCompression = 0.189
+MaxSuspensionDroop = 0.26
+ParentAxleNode = NodePath("../FrontAxle")
+DebugGeometryNode = NodePath("../ImmediateGeometry")
+
+[node name="FLeftWheel" parent="." instance=ExtResource( 1 )]
+transform = Transform( -0.150111, -2.98428e-13, -3.37067e-07, 7.77156e-16, 0.15, -1.31134e-08, 5.10548e-10, -1.31134e-08, -0.15, -0.425, -0.155607, -0.801 )
+script = ExtResource( 4 )
+ParentCarNode = NodePath("..")
+IsTurningWheel = true
+MaxSuspensionCompression = 0.189
+MaxSuspensionDroop = 0.26
+ParentAxleNode = NodePath("../FrontAxle")
+DebugGeometryNode = NodePath("../ImmediateGeometry")
+
+[connection signal="body_entered" from="." to="." method="_on_RigidBody_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_RigidBody_body_exited"]

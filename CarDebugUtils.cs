@@ -3,20 +3,6 @@
 public partial class Car
 {
     /// <summary>
-    /// Utility method to draw a line from a starting point to an end point with a given color.
-    /// </summary>
-    /// <param name="start">Start point.</param>
-    /// <param name="end">End point.</param>
-    /// <param name="color">Color to draw the line with.</param>
-    protected void DrawLine(Vector3 start, Vector3 end, Color color)
-    {
-        DebugGeometry.SetColor(color);
-        DebugGeometry.AddVertex(start);
-        DebugGeometry.SetColor(color);
-        DebugGeometry.AddVertex(end);
-    }
-
-    /// <summary>
     /// Draws various debug info.
     /// </summary>
     /// <param name="velocity">Longitudinal and lateral velocity of the car (ie. local Z and X)</param>
@@ -42,15 +28,15 @@ public partial class Car
         // Draw front axle weight
         //DrawLine(FrontAxle, FrontAxle + Vector3.Up * GetRearWeight(Acceleration.Length()) * 0.4f, Colors.DarkCyan);
 
-        DrawLine(Vector3.Zero, Vector3.Forward * velocity.lng, Colors.Blue);
-        DrawLine(Vector3.Zero, Vector3.Right * velocity.lat, Colors.Red);
+        //DebugGeometry.DrawLine(Vector3.Zero, Vector3.Forward * velocity.lng, Colors.Blue);
+        //DebugGeometry.DrawLine(Vector3.Zero, Vector3.Right * velocity.lat, Colors.Red);
 
         //DrawLine(Vector3.Zero, ChassisAngularVelocity * 3f, Colors.Pink);
 
         var torqueSplit = GetCorneringTorqueSplit(rearLat, frontLat, deltaAngle);
-        DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + torque, Colors.Purple);
+        //DebugGeometry.DrawLine(Vector3.Forward * 0.3f, (Vector3.Forward * 0.3f) + torque, Colors.Purple);
 
-        DrawLine(Vector3.Up * 0.2f, Vector3.Up * 0.2f + (Vector3.Right * netCorneringForce.y), Colors.Cornflower);
+        //DebugGeometry.DrawLine(Vector3.Up * 0.2f, Vector3.Up * 0.2f + (Vector3.Right * netCorneringForce.y), Colors.Cornflower);
 
         Vector3 wheelOrigin = Vector3.Forward * 0.3f + Vector3.Right * 0.1f;
         //DrawLine(wheelOrigin, wheelOrigin + Vector3.Right * Mathf.Sin(deltaAngle), Colors.Cyan);
