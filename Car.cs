@@ -440,7 +440,7 @@ public partial class Car : RigidBody
 
         if (ActiveColliders != 0)
         {
-            LinearVelocity += delta * longAccel;
+            //LinearVelocity += delta * longAccel;
         }
 
         Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
@@ -455,11 +455,11 @@ public partial class Car : RigidBody
         (float lng, float lat) velocitySplit = GetVelocitySplit();
 
 
-        if (ActiveColliders > 0)
+        //if (ActiveColliders > 0)
         {
-            AddCentralForce(RightVector * corneringForce.y);
-            LinearVelocity -= velocitySplit.lat * RightVector * CorneringGrip;
-            AddTorque(-torque);
+            //AddCentralForce(RightVector * corneringForce.y * (1f - CorneringGrip));
+            //LinearVelocity -= velocitySplit.lat * RightVector.Normalized() * CorneringGrip;
+            //AddTorque(-torque);
         }
     }
 

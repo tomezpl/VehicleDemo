@@ -58,7 +58,7 @@ use_collision = true
 height = 1.69476
 
 [node name="RigidBody" parent="." instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.8644, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.8644, 15.3346 )
 HandbrakePower = 9400.0
 CorneringStiffness = 11500.0
-CorneringGrip = 0.2
+CorneringGrip = 0.674
