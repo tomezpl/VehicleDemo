@@ -68,10 +68,15 @@ public class CarWheel : Spatial
 
     private float SuspensionVelocity = 0f;
 
+    [Export]
+    public float TyreFriction = 0f;
+
     float timer = 0f;
 
     [Export]
     public float DampingConstant;
+
+    public bool Colliding = false;
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
@@ -159,6 +164,8 @@ public class CarWheel : Spatial
         //DebugGeometry.DrawLine(GetGlobalMaxCompressionPoint(), GetGlobalMaxCompressionPoint() + (GetGlobalMaxDroopPoint() - GetGlobalMaxCompressionPoint()).Normalized() * CurrentSpringDistance * Scale.y, Colors.Violet);
         DebugGeometry.DrawLine(GetGlobalMaxCompressionPoint(), GetGlobalMaxCompressionPoint() + (GetSuspensionSpringForce() * GetUpVector()) / 1000f, Colors.Lime);
         DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.origin + GetWheelGravityForce(), Colors.Yellow);
+        DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.origin + GetTyreFrictionForce(), Colors.Red);
+        DebugGeometry.DrawLine(LastRaycastHit, LastRaycastHit + LatestRaycastNormal * 10f, Colors.Thistle);
         DebugGeometry.End();
 
         timer += delta;
@@ -190,14 +197,18 @@ public class CarWheel : Spatial
         {
             Vector3 raycastHit = (Vector3)raycast["position"];
             LastRaycastHit = raycastHit;
+            LatestRaycastNormal = ((Vector3)raycast["normal"]).Normalized();
+            Colliding = true;
             SetSpringDistance((raycastHit - origin).Length() / Scale.y);
         }
         else
         {
+            Colliding = false;
             SetSpringDistance((MaxSuspensionCompression + MaxSuspensionDroop) / Scale.y);
         }
 
         ApplySpringForce(GetSuspensionSpringForce());
+        ApplyTyreFriction();
     }
 
     protected float GetTyreLoad()
@@ -207,8 +218,15 @@ public class CarWheel : Spatial
 
     protected float GetSuspensionSpringForce()
     {
-        float f = -1f * SpringConstant * ((Mathf.Min(CurrentSpringDistance * Scale.y, MaxSuspensionCompression) - MaxSuspensionCompression) / Scale.y);
-        return (f / AxleRatio);
+        if (CurrentSpringDistance * Scale.y <= MaxSuspensionCompression)
+        {
+            float f = -1f * SpringConstant * ((CurrentSpringDistance * Scale.y - MaxSuspensionCompression) / Scale.y);
+            return (f / AxleRatio) * LatestRaycastNormal.Dot(ParentCar.GlobalTransform.basis.y.Normalized());
+        }
+        else
+        {
+            return 0f;
+        }
     }
 
     protected Vector3 GetUpVector()
@@ -231,10 +249,34 @@ public class CarWheel : Spatial
         return GetNormalisedVelocity();
     }
 
+    protected float GetSurfaceToSkyAlignment() => Mathf.Max(0f, LatestRaycastNormal.Dot(Vector3.Up));
+
+    protected Vector3 GetTyreFrictionForce()
+    {
+        Vector3 f = ParentCar.Transform.basis.x.Normalized() * (-ParentCar.GetVelocitySplit(-1f).lat / ParentCar.Mass) * (GetSurfaceToSkyAlignment());
+        return f / 4f * AxleRatio * TyreFriction * WheelMass;
+    }
+
+    protected void ApplyTyreFriction()
+    {
+        //ParentCar.AddCentralForce(GetTyreFrictionForce());
+        ParentCar.AddCentralForce(-ParentCar.Transform.basis.x.Normalized() * ParentCar.Transform.basis.x.Normalized().Dot(ParentCar.LinearVelocity.Normalized()) * ParentCar.LinearVelocity.Length() * TyreFriction * ParentCar.Mass / 4f); 
+    }
+
+    protected Vector3 GetSuspensionVector()
+    {
+        return GetUpVector();
+    }
+
     protected void ApplySpringForce(float springForce)
     {
-        ParentCar.AddCentralForce((springForce * GetUpVector()));
-        ParentCar.AddCentralForce(SuspensionVelocity * -GetUpVector() * DampingConstant);
-        //ParentCar.AddForce(GetWheelGravityForce(), GetGlobalMaxCompressionPoint());
+        Vector3 suspensionPoint = GetGlobalMaxCompressionPoint() - ParentCar.GlobalTransform.origin;
+        
+        ParentCar.AddForce(GetWheelGravityForce(), suspensionPoint);
+
+        //suspensionPoint = Vector3.Zero;
+
+        ParentCar.AddForce(springForce * GetSuspensionVector().Normalized(), suspensionPoint);
+        ParentCar.AddForce(Mathf.Min(SuspensionVelocity, 0f) * -GetSuspensionVector().Normalized() * DampingConstant, suspensionPoint);
     }
 }

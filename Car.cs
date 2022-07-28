@@ -289,10 +289,10 @@ public partial class Car : RigidBody
     /// Splits the velocity vector into longitudinal and lateral.
     /// </summary>
     /// <returns>Z and X speeds in the car's reference frame. Values can be negative to indicate the direction on the axis.</returns>
-    public (float lng, float lat) GetVelocitySplit()
+    public (float lng, float lat) GetVelocitySplit(float threshold = 0.2f)
     {
         float magnitude = LinearVelocity.Length();
-        if(magnitude < 0.2f)
+        if(magnitude < threshold)
         {
             return (0f, 0f);
         }
@@ -423,6 +423,15 @@ public partial class Car : RigidBody
 
     public override void _PhysicsProcess(float delta)
     {
+        ActiveColliders = 0;
+        foreach(Node child in GetChildren())
+        {
+            if(child is CarWheel)
+            {
+                ActiveColliders += (child as CarWheel).Colliding ? 1 : 0;
+            }
+        }
+
         if (Mathf.Abs(LatestCorneringInput) < 0.0001f)
         {
             WheelTurn = Mathf.Clamp(WheelTurn - WheelTurn * WheelRecoverRate * delta, -1f, 1f);
@@ -440,6 +449,7 @@ public partial class Car : RigidBody
 
         if (ActiveColliders != 0)
         {
+            AddCentralForce(longAccel * Mass);
             //LinearVelocity += delta * longAccel;
         }
 
@@ -455,11 +465,11 @@ public partial class Car : RigidBody
         (float lng, float lat) velocitySplit = GetVelocitySplit();
 
 
-        //if (ActiveColliders > 0)
+        if (ActiveColliders > 0)
         {
-            //AddCentralForce(RightVector * corneringForce.y * (1f - CorneringGrip));
+            AddCentralForce(RightVector * corneringForce.y * (1f - CorneringGrip));
             //LinearVelocity -= velocitySplit.lat * RightVector.Normalized() * CorneringGrip;
-            //AddTorque(-torque);
+            AddTorque(-torque);
         }
     }
 
@@ -573,13 +583,13 @@ public partial class Car : RigidBody
     public void _on_RigidBody_body_entered(Node body)
     {
         GD.Print("Collided");
-        ActiveColliders++;
+        //ActiveColliders++;
     }
 
     public void _on_RigidBody_body_exited(Node body)
     {
         GD.Print("Exited collision");
-        ActiveColliders = Mathf.Max(ActiveColliders - 1, 0);
+        //ActiveColliders = Mathf.Max(ActiveColliders - 1, 0);
     }
 
     /// <summary>
