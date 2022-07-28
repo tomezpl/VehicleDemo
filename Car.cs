@@ -170,9 +170,9 @@ public partial class Car : RigidBody
     /// </summary>
     private Vector3 ChassisAngularVelocity = Vector3.Zero;
 
-    private Vector3 ForwardVector { get => -Transform.basis.Column2; }
-    private Vector3 RightVector { get => Transform.basis.Column0; }
-    private Vector3 UpVector { get => Transform.basis.Column1; }
+    private Vector3 ForwardVector { get => -Transform.basis.Column2.Normalized(); }
+    private Vector3 RightVector { get => Transform.basis.Column0.Normalized(); }
+    private Vector3 UpVector { get => Transform.basis.Column1.Normalized(); }
     #endregion
 
     #region Car physical properties determined from geometry
@@ -348,7 +348,13 @@ public partial class Car : RigidBody
 
         float lowAngle = CorneringStiffness * slipAngle;
 
-        if (Mathf.Abs(slipAngleDeg) < 30f)
+        //GD.Print(slipAngleDeg);
+
+        if(Mathf.Abs(Mathf.Cos(slipAngle)) < 0.1f)
+        {
+            return Vector3.Zero;
+        }
+        else if (Mathf.Abs(slipAngleDeg) < 30f)
         {
             return UpVector * lowAngle;
         }
@@ -418,7 +424,7 @@ public partial class Car : RigidBody
     /// <returns>delta</returns>
     public float GetDeltaAngle()
     {
-        return WheelTurn * MaxWheelYaw;
+        return (WheelTurn * MaxWheelYaw);
     }
 
     public override void _PhysicsProcess(float delta)
@@ -467,7 +473,7 @@ public partial class Car : RigidBody
 
         if (ActiveColliders > 0)
         {
-            AddCentralForce(RightVector * corneringForce.y * (1f - CorneringGrip));
+            AddCentralForce(RightVector * corneringForce.y * (-CorneringGrip));
             //LinearVelocity -= velocitySplit.lat * RightVector.Normalized() * CorneringGrip;
             AddTorque(-torque);
         }
