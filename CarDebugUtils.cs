@@ -11,7 +11,7 @@ public partial class Car
     /// <param name="torque"></param>
     /// <param name="deltaAngle"></param>
     /// <param name="netCorneringForce"></param>
-    protected void DebugDraw((float lng, float lat) velocity, Vector3 rearLat, Vector3 frontLat, Vector3 torque, float deltaAngle, Vector3 netCorneringForce)
+    protected void DebugDraw((float lng, float lat) velocity, float rearLat, float frontLat, float torque, float deltaAngle, float netCorneringForce)
     {
         DebugGeometry.Clear();
         DebugGeometry.Begin(Mesh.PrimitiveType.Lines);

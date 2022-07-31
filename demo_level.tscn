@@ -59,11 +59,20 @@ height = 1.69476
 
 [node name="RigidBody" parent="." instance=ExtResource( 1 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.502487, 15.3346 )
+mass = 678.85
 EnginePower = 7000.0
 HandbrakePower = 9400.0
-CorneringStiffness = 21000.0
-CorneringGrip = 0.67
+CorneringStiffness = 11200.0
+CorneringGrip = 0.88
 
 [node name="BumpFlat2" type="CSGBox" parent="."]
 transform = Transform( 1.22167, 0, -0.905028, 0, 1, 0, 2.59937, 0, 0.425353, 0.372792, -0.868671, -0.505723 )
 use_collision = true
+
+[node name="CSGTorus" type="CSGTorus" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -7.58345, -1.12792, 0 )
+use_collision = true
+inner_radius = 3.606
+outer_radius = 6.347
+sides = 32
+ring_sides = 24

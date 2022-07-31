@@ -111,6 +111,9 @@ public class CarWheel : Spatial
         LastFramePos = GlobalTransform.origin;
 
         DebugGeometry = GetNode<ImmediateGeometry>(DebugGeometryNode);
+
+        float desiredDamping = Mathf.Sqrt(SpringConstant / ParentCar.Mass);
+        DampingConstant = SpringConstant * desiredDamping;
     }
 
     /// <summary>
