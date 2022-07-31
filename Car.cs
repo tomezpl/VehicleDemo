@@ -245,7 +245,9 @@ public partial class Car : RigidBody
             frontLat,
             GetCorneringTorque(rearLat, frontLat, deltaAngle),
             deltaAngle,
-            GetNetCorneringForce(rearLat, frontLat, deltaAngle)
+            GetNetCorneringForce(rearLat, frontLat, deltaAngle),
+            localAcceleration,
+            GetPeakAcceleration()
         );
     }
 
@@ -435,6 +437,9 @@ public partial class Car : RigidBody
 
     public override void _PhysicsProcess(float delta)
     {
+        Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
+        VelocityLastFrame = LinearVelocity;
+
         ActiveColliders = 0;
         foreach(Node child in GetChildren())
         {
@@ -455,7 +460,6 @@ public partial class Car : RigidBody
             WheelTurn = Mathf.Clamp(WheelTurn + WheelTurnRate * delta * Mathf.Sign(LatestCorneringInput), minTurnValue, maxTurnValue);
         }
 
-        VelocityLastFrame = LinearVelocity;
 
         Vector3 longAccel = (GetLongitudinalForce(LatestEngineInput, LatestHandbrakeInput) / Mass);
 
@@ -464,8 +468,6 @@ public partial class Car : RigidBody
             AddCentralForce(longAccel * Mass);
             //LinearVelocity += delta * longAccel;
         }
-
-        Acceleration = (LinearVelocity - VelocityLastFrame) / delta;
 
         (float front, float rear) alpha = GetSlipAngles();
         float rearLat = GetLateralForce(alpha.rear, GetRearWeight(GetLocalAcceleration().z));

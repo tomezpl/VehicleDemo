@@ -174,7 +174,7 @@ public class CarWheel : Spatial
         timer += delta;
         if (timer > 2f)
         {
-            GD.Print($"{Name} spring: -1 * ({CurrentSpringDistance * Scale.y:f} - {MaxSuspensionCompression:f}) = {GetSuspensionSpringForce():f}");
+            //GD.Print($"{Name} spring: -1 * ({CurrentSpringDistance * Scale.y:f} - {MaxSuspensionCompression:f}) = {GetSuspensionSpringForce():f}");
             timer = 0f;
         }
     }

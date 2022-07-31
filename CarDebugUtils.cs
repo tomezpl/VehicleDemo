@@ -11,7 +11,7 @@ public partial class Car
     /// <param name="torque"></param>
     /// <param name="deltaAngle"></param>
     /// <param name="netCorneringForce"></param>
-    protected void DebugDraw((float lng, float lat) velocity, float rearLat, float frontLat, float torque, float deltaAngle, float netCorneringForce)
+    protected void DebugDraw((float lng, float lat) velocity, float rearLat, float frontLat, float torque, float deltaAngle, float netCorneringForce, Vector3 localAcceleration, Vector3 peakAcceleration)
     {
         DebugGeometry.Clear();
         DebugGeometry.Begin(Mesh.PrimitiveType.Lines);
@@ -64,6 +64,8 @@ public partial class Car
             DebugText.Text += $"\nSlip Angle FRONT: {GetSlipAngles().front:f}rad, {Mathf.Rad2Deg(GetSlipAngles().front):f}deg";
             DebugText.Text += $"\nSlip Angle REAR: {GetSlipAngles().rear:f}rad, {Mathf.Rad2Deg(GetSlipAngles().rear):f}deg";
             DebugText.Text += $"\nTyre load: {GetTyreLoad():f}";
+            DebugText.Text += $"\nAcceleration: {localAcceleration.ToString("f")}";
+            DebugText.Text += $"\nPEAK Acceleration: {peakAcceleration.ToString("f")}";
         }
     }
 }
