@@ -38,8 +38,9 @@ public partial class Car : RigidBody
     /// <summary>
     /// Damping rate to apply to the weight transfer rate.
     /// </summary>
+    /// <remarks>The values are for X and Z axis, as if you projected the car to an XZ plane and used Vector2.y as Z.</remarks>
     [Export]
-    public float WeightTransferDamping = 0.6f;
+    public Vector2 WeightTransferDamping = new Vector2(5f, 12f);
 
 
     /// <summary>
@@ -247,7 +248,7 @@ public partial class Car : RigidBody
             deltaAngle,
             GetNetCorneringForce(rearLat, frontLat, deltaAngle),
             localAcceleration,
-            GetPeakAcceleration()
+            Vector3.Forward * GetPeakAcceleration()
         );
     }
 
@@ -282,9 +283,9 @@ public partial class Car : RigidBody
     /// Gets the peak acceleration achievable by the car. This means it will assume full engine power, no braking and no resistance.
     /// </summary>
     /// <returns></returns>
-    public Vector3 GetPeakAcceleration()
+    public float GetPeakAcceleration()
     {
-        return GetLongitudinalForce(1f, 0f, true) / Mass;
+        return (GetLongitudinalForce(1f, 0f, true) / Mass).Length();
     }
 
     /// <summary>
@@ -577,6 +578,7 @@ public partial class Car : RigidBody
         // Tom: not exactly sure why, but the sideways weight transfer only looks good when the torque is doubled.
         // I suppose it might be because it technically occurs at both the front and rear axle?
         sideTorque *= 2f;
+        //sideTorque *= CarWidth / WheelBase;
 
         // Calculate angular acceleration coming from each axle.
         Vector3 angularAcceleration = (rearTorque / rearInertia) - (frontTorque / frontInertia);
@@ -585,13 +587,16 @@ public partial class Car : RigidBody
         ChassisAngularVelocity -= angularAcceleration * delta;
         
         // Dampen the weight transfer velocity.
-        ChassisAngularVelocity -= ChassisAngularVelocity * WeightTransferDamping * delta;
+        ChassisAngularVelocity -= ChassisAngularVelocity * new Vector3(WeightTransferDamping.x, 0f, WeightTransferDamping.y) * delta;
 
         CarChassis.Rotation += ChassisAngularVelocity * delta;
 
         // Dampen the suspension to bring it back to a relaxed state over time.
-        CarChassis.Rotation -= CarChassis.Rotation * WeightTransferDamping * delta;
+        CarChassis.Rotation -= new Vector3(CarChassis.Rotation.x * WeightTransferDamping.y * delta, 0f, 0f);
+        CarChassis.Rotation -= new Vector3(0f, 0f, CarChassis.Rotation.z * WeightTransferDamping.y * delta);
+        Vector3 preClamp = CarChassis.Rotation;
         CarChassis.Rotation = new Vector3(Mathf.Clamp(CarChassis.Rotation.x, -WeightTransferMaxRadiansPitch, WeightTransferMaxRadiansPitch), CarChassis.Rotation.y, Mathf.Clamp(CarChassis.Rotation.z, -WeightTransferMaxRadiansRoll, WeightTransferMaxRadiansRoll));
+        ChassisAngularVelocity += CarChassis.Rotation - preClamp;
     }
 
     public void _on_RigidBody_body_entered(Node body)
@@ -628,7 +633,7 @@ public partial class Car : RigidBody
     protected float GetSideWeight(float acceleration)
     {
         float rideHeight = Mathf.Abs(((RearAxle + FrontAxle) / 2f).y - CarChassis.Translation.y);
-        return GetAxleWeight(acceleration, CarWidth / 2f, rideHeight);
+        return GetAxleWeight(acceleration, CarWidth / 2f, rideHeight, CarWidth);
     }
 
     protected float GetFrontWeight(float acceleration)
@@ -651,9 +656,14 @@ public partial class Car : RigidBody
     /// <param name="axleDistance">Distance from the wheel axle to the car's centre of gravity.</param>
     /// <param name="rideHeight">Ride height (ie. vertical distance between axle and centre of gravity)</param>
     /// <returns>Weight on any axle.</returns>
-    protected float GetAxleWeight(float acceleration, float axleDistance, float rideHeight)
+    protected float GetAxleWeight(float acceleration, float axleDistance, float rideHeight, float? l = null)
     {
-        return (axleDistance / WheelBase) * GetCarWeight() + (rideHeight / WheelBase) * Mass * acceleration;
+        if(l == null)
+        {
+            l = WheelBase;
+        }
+
+        return (axleDistance / WheelBase) * GetCarWeight() + (rideHeight / l.Value) * Mass * acceleration;
     }
 
     /// <summary>

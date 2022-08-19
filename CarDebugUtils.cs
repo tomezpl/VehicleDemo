@@ -66,6 +66,7 @@ public partial class Car
             DebugText.Text += $"\nTyre load: {GetTyreLoad():f}";
             DebugText.Text += $"\nAcceleration: {localAcceleration.ToString("f")}";
             DebugText.Text += $"\nPEAK Acceleration: {peakAcceleration.ToString("f")}";
+            DebugText.Text += $"\nAngular velocity: {ChassisAngularVelocity.ToString("f")}";
         }
     }
 }

@@ -62,6 +62,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.502487, 15.3346 )
 mass = 678.85
 EnginePower = 7000.0
 HandbrakePower = 9400.0
+WeightTransferDamping = Vector2( 4, 12 )
 CorneringStiffness = 11200.0
 CorneringGrip = 0.88
 

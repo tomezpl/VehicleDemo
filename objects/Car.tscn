@@ -61,12 +61,12 @@ transform = Transform( -4.49423e-08, 1.02816, 0, -0.04, -1.74846e-09, 0, 0, 0, 0
 material_override = SubResource( 7 )
 
 [node name="RRightWheel" parent="." instance=ExtResource( 1 )]
-transform = Transform( 0.15, -2.98428e-13, 0, -3.33067e-16, 0.15, 0, 0, 0, 0.15, 0.425, -0.154848, 0.8 )
+transform = Transform( 0.15, -2.98428e-13, 0, -3.33067e-16, 0.15, 0, 0, 0, 0.15, 0.425, -0.17255, 0.8 )
 script = ExtResource( 4 )
 ParentCarNode = NodePath("..")
 FlippedYAxis = true
 IsDriveWheel = true
-MaxSuspensionCompression = 0.208
+MaxSuspensionCompression = 0.206
 MaxSuspensionDroop = 0.242
 ParentAxleNode = NodePath("../RearAxle")
 WheelMass = 8.0
@@ -77,11 +77,11 @@ TyreFriction = 1.0
 DampingConstant = 22000.0
 
 [node name="RLeftWheel" parent="." instance=ExtResource( 1 )]
-transform = Transform( -0.150111, -2.98428e-13, -3.37067e-07, 7.77156e-16, 0.15, -1.31134e-08, 5.10548e-10, -1.31134e-08, -0.15, -0.425, -0.154848, 0.8 )
+transform = Transform( -0.150111, -2.98428e-13, -3.37067e-07, 7.77156e-16, 0.15, -1.31134e-08, 5.10548e-10, -1.31134e-08, -0.15, -0.425, -0.17255, 0.8 )
 script = ExtResource( 4 )
 ParentCarNode = NodePath("..")
 IsDriveWheel = true
-MaxSuspensionCompression = 0.208
+MaxSuspensionCompression = 0.206
 MaxSuspensionDroop = 0.242
 ParentAxleNode = NodePath("../RearAxle")
 WheelMass = 8.0
@@ -92,12 +92,12 @@ TyreFriction = 1.0
 DampingConstant = 22000.0
 
 [node name="FRightWheel" parent="." instance=ExtResource( 1 )]
-transform = Transform( 0.15, -2.98428e-13, 0, -3.33067e-16, 0.15, 0, 0, 0, 0.15, 0.425, -0.154848, -0.801 )
+transform = Transform( 0.15, -2.98428e-13, 0, -3.33067e-16, 0.15, 0, 0, 0, 0.15, 0.425, -0.17255, -0.801 )
 script = ExtResource( 4 )
 ParentCarNode = NodePath("..")
 FlippedYAxis = true
 IsTurningWheel = true
-MaxSuspensionCompression = 0.208
+MaxSuspensionCompression = 0.206
 MaxSuspensionDroop = 0.242
 ParentAxleNode = NodePath("../FrontAxle")
 WheelMass = 8.0
@@ -108,11 +108,11 @@ TyreFriction = 1.0
 DampingConstant = 22000.0
 
 [node name="FLeftWheel" parent="." instance=ExtResource( 1 )]
-transform = Transform( -0.150111, -2.98428e-13, -3.37067e-07, 7.77156e-16, 0.15, -1.31134e-08, 5.10548e-10, -1.31134e-08, -0.15, -0.425, -0.154848, -0.801 )
+transform = Transform( -0.150111, -2.98428e-13, -3.37067e-07, 7.77156e-16, 0.15, -1.31134e-08, 5.10548e-10, -1.31134e-08, -0.15, -0.425, -0.17255, -0.801 )
 script = ExtResource( 4 )
 ParentCarNode = NodePath("..")
 IsTurningWheel = true
-MaxSuspensionCompression = 0.208
+MaxSuspensionCompression = 0.206
 MaxSuspensionDroop = 0.242
 ParentAxleNode = NodePath("../FrontAxle")
 WheelMass = 8.0
