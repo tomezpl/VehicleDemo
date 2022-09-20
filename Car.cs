@@ -232,7 +232,7 @@ public partial class Car : RigidBody
         Vector3 localAcceleration = GetLocalAcceleration();
         AnimateWeightTransfer(localAcceleration, delta);
 
-        CameraFreeLook(new Vector2(Input.GetActionStrength(InputBindings.Names.LookRight) - Input.GetActionStrength(InputBindings.Names.LookLeft), Input.GetActionStrength(InputBindings.Names.LookUp) - Input.GetActionStrength(InputBindings.Names.LookDown)) * GamepadFreeLookSensitivity);
+        CameraFreeLook(new Vector2(Input.GetAxis(InputBindings.Names.LookLeft, InputBindings.Names.LookRight), Input.GetAxis(InputBindings.Names.LookDown, InputBindings.Names.LookUp)) * GamepadFreeLookSensitivity);
 
         (float front, float rear) slipAngles = GetSlipAngles();
         float rearLat = GetLateralForce(slipAngles.rear, GetRearWeight(localAcceleration.z));
