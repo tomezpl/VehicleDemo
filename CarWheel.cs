@@ -165,10 +165,11 @@ public class CarWheel : Spatial
         DebugGeometry.DrawLine(LastRaycastHit - Vector3.Right * 0.3f, LastRaycastHit + Vector3.Right * 0.3f, Colors.Purple);
         //DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.Xform(BaseOffset + Vector3.Down * WheelRadius * Scale.y), Colors.OrangeRed);
         //DebugGeometry.DrawLine(GetGlobalMaxCompressionPoint(), GetGlobalMaxCompressionPoint() + (GetGlobalMaxDroopPoint() - GetGlobalMaxCompressionPoint()).Normalized() * CurrentSpringDistance * Scale.y, Colors.Violet);
-        DebugGeometry.DrawLine(GetGlobalMaxCompressionPoint(), GetGlobalMaxCompressionPoint() + (GetSuspensionSpringForce() * GetUpVector()) / 1000f, Colors.Lime);
-        DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.origin + GetWheelGravityForce(), Colors.Yellow);
+        DebugGeometry.DrawLine(GetGlobalMaxCompressionPoint(), GetGlobalMaxCompressionPoint() + (GetSuspensionSpringForce() * GetUpVector()) / SpringConstant, Colors.Lime);
+        //DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.origin + GetWheelGravityForce().Normalized(), Colors.Yellow);
         DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.origin + GetTyreFrictionForce(), Colors.Red);
-        DebugGeometry.DrawLine(LastRaycastHit, LastRaycastHit + LatestRaycastNormal * 10f, Colors.Thistle);
+        DebugGeometry.DrawLine(LastRaycastHit, LastRaycastHit + LatestRaycastNormal * 1f, Colors.Thistle);
+        DebugGeometry.DrawLine(LastRaycastHit, LastRaycastHit + GetWheelSurfaceTangent(LatestRaycastNormal), Colors.Pink);
         DebugGeometry.End();
 
         timer += delta;
@@ -190,6 +191,26 @@ public class CarWheel : Spatial
     {
         Spatial parentSpatial = GetParentSpatial();
         return parentSpatial.GlobalTransform.Xform(BaseOffset + Vector3.Down * MaxSuspensionDroop * parentSpatial.Scale.y);
+    }
+
+    public static Vector3 CrossProduct(Vector3 a, Vector3 b)
+    {
+        return new Vector3
+            (
+            a.y * b.z - a.z * b.y, 
+            a.z * b.x - a.x * b.z, 
+            a.x * b.y - a.y * b.x
+            );
+    }
+
+    /// <summary>
+    /// Gets direction vector pointing at where the wheel should be rolling along the surface currently underneath it.
+    /// </summary>
+    /// <param name="surfaceNormal"></param>
+    /// <returns></returns>
+    public Vector3 GetWheelSurfaceTangent(Vector3 surfaceNormal)
+    {
+        return CrossProduct(surfaceNormal, GlobalTransform.basis.x.Normalized() * (FlippedYAxis ? 1f : -1f));
     }
 
     public override void _PhysicsProcess(float delta)
@@ -221,11 +242,13 @@ public class CarWheel : Spatial
 
     protected float GetSuspensionSpringForce()
     {
+        // Check that the springs are actually being compressed right now and thus an upwards force needs to be exerted on the chassis.
         if (CurrentSpringDistance * Scale.y <= MaxSuspensionCompression)
         {
             float f = -1f * SpringConstant * ((CurrentSpringDistance * Scale.y - MaxSuspensionCompression) / Scale.y);
             return (f / AxleRatio) * LatestRaycastNormal.Dot(ParentCar.GlobalTransform.basis.y.Normalized());
         }
+        // If there is no compression, nullify the weight. In real life the wheel would also pull the chassis with it but it's not needed in our case.
         else
         {
             return 0f;
