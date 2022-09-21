@@ -170,6 +170,7 @@ public class CarWheel : Spatial
         DebugGeometry.DrawLine(GlobalTransform.origin, GlobalTransform.origin + GetTyreFrictionForce(), Colors.Red);
         DebugGeometry.DrawLine(LastRaycastHit, LastRaycastHit + LatestRaycastNormal * 1f, Colors.Thistle);
         DebugGeometry.DrawLine(LastRaycastHit, LastRaycastHit + GetWheelSurfaceTangent(LatestRaycastNormal), Colors.Pink);
+        DebugGeometry.DrawLine(ParentCar.GlobalTransform.origin, GlobalTransform.origin, Colors.Purple);
         DebugGeometry.End();
 
         timer += delta;
@@ -233,6 +234,16 @@ public class CarWheel : Spatial
 
         ApplySpringForce(GetSuspensionSpringForce());
         ApplyTyreFriction();
+
+        if(Colliding && IsDriveWheel)
+        {
+            ApplyDriveForce();
+        }
+    }
+
+    private void ApplyDriveForce()
+    {
+        ParentCar.AddForce(GetWheelSurfaceTangent(LatestRaycastNormal) * (ParentCar.CurrentDriveForce * 0.5f) - ParentCar.GetRollingResistance(), GlobalTransform.origin - ParentCar.GlobalTransform.origin);
     }
 
     protected float GetTyreLoad()

@@ -63,7 +63,7 @@ mass = 678.85
 EnginePower = 7000.0
 HandbrakePower = 9400.0
 WeightTransferDamping = Vector2( 4, 12 )
-CorneringStiffness = 11200.0
+CorneringStiffness = 7000.0
 CorneringGrip = 0.88
 
 [node name="BumpFlat2" type="CSGBox" parent="."]

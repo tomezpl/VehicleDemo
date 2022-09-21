@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Security.Policy;
 
 public partial class Car : RigidBody
 {
@@ -193,6 +194,10 @@ public partial class Car : RigidBody
     protected Vector3 RearAxle, FrontAxle;
     #endregion
 
+    #region Variables to be read/used by child components
+    public float CurrentDriveForce = 0f;
+    #endregion
+
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
@@ -285,7 +290,7 @@ public partial class Car : RigidBody
     /// <returns></returns>
     public float GetPeakAcceleration()
     {
-        return (GetLongitudinalForce(1f, 0f, true) / Mass).Length();
+        return Mathf.Abs(GetLongitudinalForce(1f, 0f) / Mass);
     }
 
     /// <summary>
@@ -462,13 +467,15 @@ public partial class Car : RigidBody
         }
 
 
-        Vector3 longAccel = (GetLongitudinalForce(LatestEngineInput, LatestHandbrakeInput) / Mass);
+        float longAccel = (GetLongitudinalForce(LatestEngineInput, LatestHandbrakeInput) / Mass);
 
         if (ActiveColliders != 0)
         {
-            AddCentralForce(longAccel * Mass);
-            //LinearVelocity += delta * longAccel;
+            //AddCentralForce(longAccel * Mass);
+            AddCentralForce(GetDragForce());
         }
+
+        CurrentDriveForce = longAccel * Mass;
 
         (float front, float rear) alpha = GetSlipAngles();
         float rearLat = GetLateralForce(alpha.rear, GetRearWeight(GetLocalAcceleration().z));
@@ -671,9 +678,9 @@ public partial class Car : RigidBody
     /// </summary>
     /// <param name="engineInput">Engine force to apply. Negative values can be used for braking and reversing.</param>
     /// <returns>Ftraction</returns>
-    protected Vector3 GetTractionForce(float engineInput)
+    protected float GetTractionForce(float engineInput)
     {
-        return ForwardVector * engineInput * EnginePower;
+        return engineInput * EnginePower;
     }
 
     /// <summary>
@@ -689,7 +696,7 @@ public partial class Car : RigidBody
     /// Calculates resistance force caused by friction between tire rubber and road surface, based on <see cref="RollingResistance"/> constant and current velocity.
     /// </summary>
     /// <returns></returns>
-    protected Vector3 GetRollingResistance()
+    public Vector3 GetRollingResistance()
     {
         return -RollingResistance * LinearVelocity;
     }
@@ -700,17 +707,17 @@ public partial class Car : RigidBody
     /// <param name="brakeInput">Handbrake input value.</param>
     /// <param name="engineInput">Engine input value.</param>
     /// <returns></returns>
-    protected Vector3 GetHandbrakeForce(float brakeInput, float engineInput)
+    protected float GetHandbrakeForce(float brakeInput, float engineInput)
     {
-        return ForwardVector * Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -HandbrakePower * -Mathf.Sign(GetVelocitySplit().lng);
+        return Mathf.Abs(LinearVelocity.Normalized().Dot(ForwardVector)) * brakeInput * -HandbrakePower * -Mathf.Sign(GetVelocitySplit().lng);
     }
 
     /// <summary>
-    /// Longitudinal force exerted by the car wheels combined, including engine, brake and resistance forces.
+    /// Longitudinal force exerted by the car wheels combined, including engine and brake forces.
     /// </summary>
     /// <returns></returns>
-    protected Vector3 GetLongitudinalForce(float engineInput, float brakeInput, bool ignoreResistance = false)
+    protected float GetLongitudinalForce(float engineInput, float brakeInput)
     {
-        return ignoreResistance ? (GetTractionForce(engineInput) + GetHandbrakeForce(brakeInput, engineInput)) : (GetTractionForce(engineInput) + GetHandbrakeForce(brakeInput, engineInput) + GetDragForce() + GetRollingResistance());
+        return GetTractionForce(engineInput) + GetHandbrakeForce(brakeInput, engineInput);
     }
 }
